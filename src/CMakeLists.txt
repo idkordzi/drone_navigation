@@ -139,14 +139,70 @@ target_include_directories(${TargetStateEstimator}
 )
 
 # ################################################################
+# Build executables
+# ################################################################
+
+add_executable(${TargetYoloWrapper}_test 
+  ${OpenCV_INCLUDE_DIRS} 
+  ${ONNXRUNTIME_DIR}/include 
+  ${EIGEN_LIB_ROOT_PATH} 
+  ${DRONE_NAVIGATION_LIB_ROOT_PATH}/test/drone_vision/drone_vision_test_class.cpp 
+)
+target_compile_features(${TargetYoloWrapper}_test PUBLIC cxx_std_17)
+target_link_libraries(${TargetYoloWrapper}_test 
+  PUBLIC 
+    ${OpenCV_LIBS} 
+    ${ONNXRUNTIME_DIR}/lib/libonnxruntime.so 
+    ${TargetYoloWrapper} 
+)
+
+add_executable(${TargetVfhPlanner}_test 
+  ${OpenCV_INCLUDE_DIRS} 
+  ${EIGEN_LIB_ROOT_PATH} 
+  ${DRONE_NAVIGATION_LIB_ROOT_PATH}/test/drone_planner/drone_planner_test_class.cpp 
+)
+target_compile_features(${TargetVfhPlanner}_test PUBLIC cxx_std_17)
+target_link_libraries(${TargetVfhPlanner}_test 
+  PUBLIC 
+    ${OpenCV_LIBS} 
+    ${TargetVfhPlanner} 
+)
+
+add_executable(${TargetFlightController}_test 
+  ${OpenCV_INCLUDE_DIRS} 
+  ${EIGEN_LIB_ROOT_PATH} 
+  ${DRONE_NAVIGATION_LIB_ROOT_PATH}/test/flight_control/drone_control_test_class.cpp 
+)
+target_compile_features(${TargetFlightController}_test PUBLIC cxx_std_17)
+target_link_libraries(${TargetFlightController}_test 
+  PUBLIC 
+    ${OpenCV_LIBS} 
+    ${TargetFlightController} 
+)
+
+# ################################################################
 # Install components
 # ################################################################
 
-install(TARGETS 
-  ${TargetCameraWrapper} 
-  ${TargetYoloWrapper} 
-  ${TargetVfhPlanner} 
-  ${TargetFlightController} 
-  ${TargetStateEstimator} 
-  DESTINATION lib/${PROJECT_NAME}
-)
+if(BUILD_FOR_ROS)
+  install(TARGETS 
+    ${TargetCameraWrapper} 
+    ${TargetYoloWrapper} 
+    ${TargetVfhPlanner} 
+    ${TargetFlightController} 
+    ${TargetStateEstimator} 
+    DESTINATION lib/${PROJECT_NAME}
+  )
+
+  install(
+    DIRECTORY
+      yolo/models/
+    DESTINATION share/${PROJECT_NAME}/yolo/models
+  )
+
+  install(
+    DIRECTORY
+      yolo/labels/
+    DESTINATION share/${PROJECT_NAME}/yolo/labels
+  )
+endif()

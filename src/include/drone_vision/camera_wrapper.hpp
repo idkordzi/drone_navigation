@@ -14,7 +14,7 @@ public:
   CameraWrapper();
   ~CameraWrapper() = default;
 
-private:
+protected:
 
   CameraWrapperConfig config_ = {};
 };

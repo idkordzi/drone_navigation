@@ -364,6 +364,7 @@ YOLO12Detector::YOLO12Detector(const std::string &modelPath, const std::string &
     std::cout << "Inference device: CPU" << std::endl;
   }
 
+  // Load the ONNX model into the session
   session = Ort::Session(env, modelPath.c_str(), sessionOptions);
 
   Ort::AllocatorWithDefaultOptions allocator;
@@ -403,28 +404,28 @@ YOLO12Detector::YOLO12Detector(const std::string &modelPath, const std::string &
 
 // Preprocess function implementation
 cv::Mat YOLO12Detector::preprocess(const cv::Mat &image, float *&blob, std::vector<int64_t> &inputTensorShape) {
-    cv::Mat resizedImage;
-    // Resize and pad the image using letterBox utility
-    letterBox(image, resizedImage, inputImageShape, cv::Scalar(114, 114, 114), isDynamicInputShape, false, true, 32);
+  cv::Mat resizedImage;
+  // Resize and pad the image using letterBox utility
+  letterBox(image, resizedImage, inputImageShape, cv::Scalar(114, 114, 114), isDynamicInputShape, false, true, 32);
 
-    // Update input tensor shape based on resized image dimensions
-    inputTensorShape[2] = resizedImage.rows;
-    inputTensorShape[3] = resizedImage.cols;
+  // Update input tensor shape based on resized image dimensions
+  inputTensorShape[2] = resizedImage.rows;
+  inputTensorShape[3] = resizedImage.cols;
 
-    // Convert image to float and normalize to [0, 1]
-    resizedImage.convertTo(resizedImage, CV_32FC3, 1 / 255.0f);
+  // Convert image to float and normalize to [0, 1]
+  resizedImage.convertTo(resizedImage, CV_32FC3, 1 / 255.0f);
 
-    // Allocate memory for the image blob in CHW format
-    blob = new float[resizedImage.cols * resizedImage.rows * resizedImage.channels()];
+  // Allocate memory for the image blob in CHW format
+  blob = new float[resizedImage.cols * resizedImage.rows * resizedImage.channels()];
 
-    // Split the image into separate channels and store in the blob
-    std::vector<cv::Mat> chw(resizedImage.channels());
-    for (int i = 0; i < resizedImage.channels(); ++i) {
-      chw[i] = cv::Mat(resizedImage.rows, resizedImage.cols, CV_32FC1, blob + i * resizedImage.cols * resizedImage.rows);
-    }
-    cv::split(resizedImage, chw); // Split channels into the blob
+  // Split the image into separate channels and store in the blob
+  std::vector<cv::Mat> chw(resizedImage.channels());
+  for (int i = 0; i < resizedImage.channels(); ++i) {
+    chw[i] = cv::Mat(resizedImage.rows, resizedImage.cols, CV_32FC1, blob + i * resizedImage.cols * resizedImage.rows);
+  }
+  cv::split(resizedImage, chw); // Split channels into the blob
 
-    return resizedImage;
+  return resizedImage;
 }
 
 // Postprocess function to convert raw model output into detections

@@ -15,15 +15,15 @@ struct FlightControllerConfig {
   float hover_vel_rr_ = 0.0f;
   float hover_vel_rl_ = 0.0f;
 
-  float reg_up_Kp_ = 0.0f;
+  float reg_up_Kp_ = 1.0f;
   float reg_up_Ki_ = 0.0f;
   float reg_up_Kd_ = 0.0f;
 
-  float reg_vel_Kp_ = 0.0f;
+  float reg_vel_Kp_ = 1.0f;
   float reg_vel_Ki_ = 0.0f;
   float reg_vel_Kd_ = 0.0f;
 
-  float reg_rot_Kp_ = 0.0f;
+  float reg_rot_Kp_ = 1.0f;
   float reg_rot_Ki_ = 0.0f;
   float reg_rot_Kd_ = 0.0f;
 };

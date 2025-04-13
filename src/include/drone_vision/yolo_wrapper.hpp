@@ -10,18 +10,18 @@
 namespace DRONE_NAVIGATION {
 
 struct YOLOWrapperConfig {
-  unsigned im_width_  = 0;
-  unsigned im_height_ = 0;
+  unsigned im_width_  = 640;
+  unsigned im_height_ = 360;
 
   unsigned yolo_in_width_  = 0;
   unsigned yolo_in_height_ = 0;
 
-  unsigned yolo_class_    = 0;
-  float    yolo_min_conf_ = 0.0f;
+  int   yolo_class_    = 2;
+  float yolo_min_conf_ = 0.6f;
 
   // TODO get path to model/labels from external source (ex. ROS2)
-  std::string model_path_  = "/home/igork/work/drone_in_urban_environment/install/drone_navigation_ros/share/drone_navigation/yolo/models/yolo11n.onnx";
-  std::string labels_path_ = "/home/igork/work/drone_in_urban_environment/install/drone_navigation_ros/share/drone_navigation/yolo/labels/coco.names";
+  std::string model_path_  = "install/drone_navigation_ros/share/drone_navigation/yolo/models/yolo11n.onnx"; // "src/yolo/models/yolo11n.onnx"
+  std::string labels_path_ = "install/drone_navigation_ros/share/drone_navigation/yolo/labels/coco.names"; // "src/yolo/labels/coco.names"
 };
 
 class YOLOWrapper {
@@ -36,7 +36,7 @@ public:
 
   void run();
 
-private:
+protected:
 
   YOLOWrapperConfig config_ = {};
 

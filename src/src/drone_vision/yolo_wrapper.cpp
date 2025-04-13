@@ -12,7 +12,7 @@ YOLOWrapper::YOLOWrapper() {
 }
 
 void YOLOWrapper::setInput(const cv::Mat& image) {
-  cv::resize(image, this->input_, cv::Size(this->config_.yolo_in_height_, this->config_.yolo_in_width_), 0.0f, 0.0f, cv::INTER_LINEAR);
+  image.copyTo(this->input_);
 }
 
 Eigen::Vector2i YOLOWrapper::getOutput() const {
