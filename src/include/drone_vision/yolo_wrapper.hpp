@@ -2,26 +2,30 @@
 
 #include <string>
 #include <cmath>
+#include <memory>
+
 #include "opencv2/opencv.hpp"
+
 #include "Eigen/Dense"
+
 #include "yolo_detector.hpp"
 
 
 namespace DRONE_NAVIGATION {
 
+inline int sqr(int x) {return x*x;}
+
 struct YOLOWrapperConfig {
-  unsigned im_width_  = 640;
-  unsigned im_height_ = 360;
 
-  unsigned yolo_in_width_  = 0;
-  unsigned yolo_in_height_ = 0;
+  // yolo params
+  unsigned yolo_in_width = 640;
+  unsigned yolo_in_height = 360;
 
-  int   yolo_class_    = 2;
-  float yolo_min_conf_ = 0.6f;
+  int   yolo_class = 2;
+  float yolo_min_conf = 0.6f; // (0,1)
 
-  // TODO get path to model/labels from external source (ex. ROS2)
-  std::string model_path_  = "install/drone_navigation_ros/share/drone_navigation/yolo/models/yolo11n.onnx"; // "src/yolo/models/yolo11n.onnx"
-  std::string labels_path_ = "install/drone_navigation_ros/share/drone_navigation/yolo/labels/coco.names"; // "src/yolo/labels/coco.names"
+  std::string model_path  = "src/yolo/models/yolo11n.onnx";
+  std::string labels_path = "src/yolo/labels/coco.names";
 };
 
 class YOLOWrapper {
@@ -29,14 +33,18 @@ class YOLOWrapper {
 public:
 
   YOLOWrapper();
+  YOLOWrapper(YOLOWrapperConfig config);
   ~YOLOWrapper() = default;
 
   void setInput(const cv::Mat& image);
-  Eigen::Vector2i getOutput() const;
 
   void run();
 
+  Eigen::Vector2i getTarget() const;
+
 protected:
+
+  void initialize();
 
   YOLOWrapperConfig config_ = {};
 
@@ -44,6 +52,7 @@ protected:
 
   cv::Mat input_;
   Eigen::Vector2i target_loc_ = {};
+  Eigen::Vector2i target_last_loc_ = {};
 };
 
 } // namesapce DRONE_NAVIGATION

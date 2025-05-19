@@ -19,52 +19,94 @@ public:
   YOLOWrapperTestClass() = default;
   ~YOLOWrapperTestClass() = default;
 
-  void runTests() {
+  void runTest() {
+
+    std::cout << "[INFO] Running 'drone_yolo_wrapper_test'\n";
+
+    // ******************************************************************************************************************************** //
+    std::cout << "[INFO] Test: read image from file\n";
 
     std::string image_path = "src/yolo/dataset/000000017627.jpg";
     cv::Mat image = cv::imread(image_path);
 
-    if (image.empty()) std::cout << "[ERROR] Image could not be loaded!\n";
-    else std::cout << "[INFO] Loaded image successfully, image size (" << image.size[0] << " x " << image.size[1] << ")\n";
+    if (image.empty())
+      std::cout << "[ERROR] Image could not be loaded! ('" << image_path << "')\n";
+    else
+      std::cout << "[SUCCESS] Image loaded - image size (" << image.size[0] << "x" << image.size[1] << ")\n";
 
-    cv::imshow("Input preview - press any key to continue", image);
+    std::cout << "Display image preview - press any key to continue\n";
+    cv::imshow("Input preview", image);
     cv::waitKey(0);
+
+    // ******************************************************************************************************************************** //
+    std::cout << "[INFO] Test: add image\n";
 
     this->setInput(image);
 
-    if (this->input_.empty()) printf("[ERROR] Could not set input image!\n");
-    else std::cout << "[INFO] Successfully cached input image, image size (" << this->input_.size[0] << " x " << this->input_.size[1] << ")\n";
+    if (this->input_.empty())
+      std::cout << "[ERROR] Could not set input image!\n";
+    else
+      std::cout << "[SUCCESS] Input image cached - image size (" << this->input_.size[0] << "x" << this->input_.size[1] << ")\n";
+
+    // ******************************************************************************************************************************** //
+    std::cout << "[INFO] Test: run one inferance\n";
 
     this->run();
 
-    std::cout << "[INFO] Successfully performed one iference\n";
-
     std::vector<YOLO_DETECTOR::Detection> results = this->detector_->detect(this->input_);
 
-    std::cout << "[INFO] Numebr of detections (" << results.size() << ")\n";
+    if (results.size() < 1)
+      std::cout << "[ERROR] Could not run inference\n";
+    else {
+      std::cout << "[SUCCESS] Numebr of detections: " << results.size() << "\n";
 
-    std::set<int> found_classes = {};
-    for (const auto& det : results) {
-      found_classes.insert(det.classId); 
-    }
-    std::cout << "[INFO] Total distinct classes (" << found_classes.size() << ")\n";
+      std::set<int> found_classes = {};
+      for (const auto& det : results) {
+        found_classes.insert(det.classId);
+      }
+      std::cout << "Total distinct classes: " << found_classes.size() << "\n";
 
-    std::vector<std::string> class_names = YOLO_DETECTOR::getClassNames("src/yolo/labels/coco.names");
-    for (const auto& el : found_classes) {
-      std::cout << el << " " << class_names[el] <<std::endl;
+      std::vector<std::string> class_names = YOLO_DETECTOR::getClassNames("src/yolo/labels/coco.names");
+      for (const auto& el : found_classes) {
+        std::cout << el << " " << class_names[el] <<std::endl;
+      }
     }
+
+    // ******************************************************************************************************************************** //
+    std::cout << "[INFO] Test: draw detection and save to file\n";
 
     cv::Mat output_image;
     image.copyTo(output_image);
     this->detector_->drawBoundingBox(output_image, results);
 
-    cv::imshow("Output preview - press any key to continue", output_image);
+    std::cout << "Display image preview - press any key to continue\n";
+    cv::imshow("Output preview", output_image);
     cv::waitKey(0);
+
+    Eigen::Vector2i target_loc = this->getTarget();
+    std::cout << "Target location: (" << target_loc.x() << ", " << target_loc.y() << ")\n";
 
     cv::imwrite("src/yolo/dataset/000000017627_out.jpg", output_image);
 
-    Eigen::Vector2i target_loc = this->getOutput();
-    std::cout << "[INFO] Target location (" << target_loc.x() << ", " << target_loc.y() << ")\n";
+    // ******************************************************************************************************************************** //
+    std::cout << "[INFO] Test: inferetion timing\n";
+
+    double avg_time = 0.0;
+    std::cout << "Running 100 loops\n";
+    for (int l = 0; l < 100; l++) {
+      std::chrono::system_clock::time_point time_start = std::chrono::system_clock::now();
+
+      this->setInput(image);
+      this->run();
+      target_loc = this->getTarget();
+
+      std::chrono::duration<double> time_passed = std::chrono::system_clock::now() - time_start;
+      avg_time = time_passed.count();
+    }
+    avg_time = avg_time / 100.0;
+    std::cout << "Average inference time: " << avg_time << " [s]\n";
+
+    std::cout << "[INFO] Test STOP\n";
   }
 
 };
@@ -75,7 +117,7 @@ public:
 int main() {
 
   DRONE_NAVIGATION::YOLOWrapperTestClass yolo_wrapper_test_class = DRONE_NAVIGATION::YOLOWrapperTestClass();
-  yolo_wrapper_test_class.runTests();
+  yolo_wrapper_test_class.runTest();
 
   return 0;
 }
