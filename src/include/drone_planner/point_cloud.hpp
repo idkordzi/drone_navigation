@@ -15,6 +15,7 @@ struct PointXYZ {
 };
 
 inline Eigen::Vector3f toEigen(const PointXYZ& p) {return Eigen::Vector3f(p.x, p.y, p.z);}
+inline PointXYZ toPointXYZ(const Eigen::Vector3f& p) {return PointXYZ(p.x(), p.y(), p.z());}
 
 struct PointXYZI {
   PointXYZI() : x(0.0f), y(0.0f), z(0.0f), i(0.0f) {}
@@ -26,6 +27,7 @@ struct PointXYZI {
 };
 
 inline Eigen::Vector3f toEigen(const PointXYZI& p) {return Eigen::Vector3f(p.x, p.y, p.z);}
+inline PointXYZI toPointXYZI(const Eigen::Vector3f& p, float age = 0.0f) {return PointXYZI(p.x(), p.y(), p.z(), age);}
 
 template <typename PointType>
 class PointCloud {
@@ -49,7 +51,7 @@ public:
   void clear() {this->cloud_.clear();}
   size_t size() const {return this->cloud_.size();}
 
-  PointType& operator[](int index) {return &(this->cloud_[index]);}
+  PointType& operator[](int index) {return this->cloud_[index];}
 
   std::vector<PointType> cloud_ = {};
 };

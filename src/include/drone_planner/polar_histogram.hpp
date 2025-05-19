@@ -9,26 +9,70 @@
 
 namespace DRONE_NAVIGATION {
 
-// Valid resolutions must fullfill:
-// 180 % (2 * ALPHA_RES) = 0
-// Examples: 1, 3, 5, 6, 10, 15, 18, 30, 45, 60
-constexpr int CELL_SIZE = 6;
-constexpr int AZIMUTH_RESOLUTION   = 360 / CELL_SIZE;
-constexpr int ELEVATION_RESOLUTION = 180 / CELL_SIZE;
+struct HistogramCell {
+  HistogramCell() {}
+  HistogramCell(float _d, float _a) : distance(_d), age(_a) {}
+  float distance = 0.0f;
+  float age = 0.0f;
+};
 
 class PolarHistogram {
 
 public:
-  PolarHistogram(int res);
+
+  PolarHistogram();
+  PolarHistogram(int alpha);
   ~PolarHistogram() = default;
 
-  float getDistance(int elev, int azim) const {
-    wrapIndex(elev, azim);
-    return this->distance_(elev, azim);
+  inline float getDistance(int y, int x) const {
+    return this->distance_(y, x);
   }
 
-  void setDistance(int elev, int azim, float value) {
-    this->distance_(elev, azim) = value;
+  inline float getAge(int y, int x) const {
+    return this->age_(y, x);
+  }
+
+  inline HistogramCell getCell(int y, int x) const {
+    return HistogramCell(this->distance_(y, x), this->age_(y, x));
+  }
+
+  inline void setDistance(int y, int x, float value) {
+    this->distance_(y, x) = value;
+  }
+
+  inline void setAge(int y, int x, float value) {
+    this->age_(y, x) = value;
+  }
+
+  inline void setCell(int y, int x, float distance, float age) {
+    this->distance_(y, x) = distance;
+    this->age_(y, x) = age;
+  }
+
+  inline void addToDistance(int y, int x, float value) {
+    this->distance_(y, x) += value;
+  }
+
+  inline void addToAge(int y, int x, float value) {
+    this->age_(y, x) += value;
+  }
+
+  inline void addToCell(int y, int x, float distance, float age) {
+    this->distance_(y, x) += distance;
+    this->age_(y, x) += age;
+  }
+
+  inline void fillDistance(float value) {
+    this->distance_.fill(value);
+  }
+
+  inline void fillAge(float value) {
+    this->age_.fill(value);
+  }
+
+  inline void fillCells(float distance, float age) {
+    this->distance_.fill(distance);
+    this->age_.fill(age);
   }
 
   void upsample();
@@ -36,19 +80,24 @@ public:
   void clear();
   bool isEmpty() const;
 
+  int getAlpha() const {return this->alpha_;}
+  int getAzimRes() const {return this->azim_dim_;}
+  int getElevRes() const {return this->elev_dim_;}
+
 private:
 
-  int resolution_ = 0.0f;
-  int azim_dim_   = 0.0f;
-  int elev_dim_   = 0.0f;
+  int alpha_    = 0.0f;
+  int azim_dim_ = 0.0f;
+  int elev_dim_ = 0.0f;
   
   Eigen::MatrixXf distance_ = {};
+  Eigen::MatrixXf age_ = {};
 
-  inline void wrapIndex(int &elev, int &azim) const {
-    elev = elev % this->elev_dim_;
-    if (elev < 0) elev += this->elev_dim_;
-    azim = azim % this->azim_dim_;
-    if (azim < 0) azim += this->azim_dim_;
+  inline void wrapIndex(int& y, int& x) const {
+    y = y % this->elev_dim_;
+    if (y < 0) y += this->elev_dim_;
+    x = x % this->azim_dim_;
+    if (x < 0) x += this->azim_dim_;
   }
 
 };
