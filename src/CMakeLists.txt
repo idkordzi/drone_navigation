@@ -67,6 +67,7 @@ target_compile_features(${TargetCameraWrapper} PUBLIC cxx_std_17)
 target_include_directories(${TargetCameraWrapper} 
   PUBLIC 
     ${OpenCV_INCLUDE_DIRS} 
+    ${EIGEN_LIB_ROOT_PATH} 
     ${DRONE_NAVIGATION_LIB_ROOT_PATH}/include/drone_vision 
 )
 target_link_libraries(${TargetCameraWrapper} 
@@ -99,8 +100,6 @@ target_link_libraries(${TargetYoloWrapper}
 set(TargetVfhPlanner drone_vfh_planner)
 add_library(${TargetVfhPlanner}
   STATIC
-    ${DRONE_NAVIGATION_LIB_ROOT_PATH}/src/drone_planner/vfh_planner.cpp 
-    ${DRONE_NAVIGATION_LIB_ROOT_PATH}/src/drone_planner/star_planner.cpp 
     ${DRONE_NAVIGATION_LIB_ROOT_PATH}/src/drone_planner/local_planner.cpp 
     ${DRONE_NAVIGATION_LIB_ROOT_PATH}/src/drone_planner/polar_histogram.cpp
     ${DRONE_NAVIGATION_LIB_ROOT_PATH}/src/drone_planner/common.cpp
@@ -108,8 +107,13 @@ add_library(${TargetVfhPlanner}
 target_compile_features(${TargetVfhPlanner} PUBLIC cxx_std_17)
 target_include_directories(${TargetVfhPlanner} 
   PUBLIC 
+    ${OpenCV_INCLUDE_DIRS} 
     ${EIGEN_LIB_ROOT_PATH} 
     ${DRONE_NAVIGATION_LIB_ROOT_PATH}/include/drone_planner 
+)
+target_link_libraries(${TargetVfhPlanner} 
+  PUBLIC 
+    ${OpenCV_LIBS} 
 )
 
 # Add flight_controller
@@ -135,46 +139,62 @@ add_library(${TargetStateEstimator}
 target_compile_features(${TargetStateEstimator} PUBLIC cxx_std_17)
 target_include_directories(${TargetStateEstimator} 
   PUBLIC 
+    ${EIGEN_LIB_ROOT_PATH} 
+    ${DRONE_NAVIGATION_LIB_ROOT_PATH}/include/flight_control 
+)
+
+# Add UDP socket
+set(TargetSocketUDP drone_socket_udp)
+add_library(${TargetSocketUDP}
+  STATIC
+    ${DRONE_NAVIGATION_LIB_ROOT_PATH}/src/flight_control/socket_udp.cpp
+)
+target_compile_features(${TargetSocketUDP} PUBLIC cxx_std_17)
+target_include_directories(${TargetSocketUDP} 
+  PUBLIC 
     ${DRONE_NAVIGATION_LIB_ROOT_PATH}/include/flight_control 
 )
 
 # ################################################################
-# Build executables
+# Build executables (test classes)
 # ################################################################
 
-add_executable(${TargetYoloWrapper}_test 
+set(TargetDroneVisionTest drone_vision_test)
+add_executable(${TargetDroneVisionTest} 
   ${OpenCV_INCLUDE_DIRS} 
   ${ONNXRUNTIME_DIR}/include 
   ${EIGEN_LIB_ROOT_PATH} 
   ${DRONE_NAVIGATION_LIB_ROOT_PATH}/test/drone_vision/drone_vision_test_class.cpp 
 )
-target_compile_features(${TargetYoloWrapper}_test PUBLIC cxx_std_17)
-target_link_libraries(${TargetYoloWrapper}_test 
+target_compile_features(${TargetDroneVisionTest} PUBLIC cxx_std_17)
+target_link_libraries(${TargetDroneVisionTest} 
   PUBLIC 
     ${OpenCV_LIBS} 
     ${ONNXRUNTIME_DIR}/lib/libonnxruntime.so 
     ${TargetYoloWrapper} 
 )
 
-add_executable(${TargetVfhPlanner}_test 
+set(TargetDronePlannerTest drone_planner_test)
+add_executable(${TargetDronePlannerTest} 
   ${OpenCV_INCLUDE_DIRS} 
   ${EIGEN_LIB_ROOT_PATH} 
   ${DRONE_NAVIGATION_LIB_ROOT_PATH}/test/drone_planner/drone_planner_test_class.cpp 
 )
-target_compile_features(${TargetVfhPlanner}_test PUBLIC cxx_std_17)
-target_link_libraries(${TargetVfhPlanner}_test 
+target_compile_features(${TargetDronePlannerTest} PUBLIC cxx_std_17)
+target_link_libraries(${TargetDronePlannerTest} 
   PUBLIC 
     ${OpenCV_LIBS} 
     ${TargetVfhPlanner} 
 )
 
-add_executable(${TargetFlightController}_test 
+set(TargetDroneControllerTest drone_controller_test)
+add_executable(${TargetDroneControllerTest} 
   ${OpenCV_INCLUDE_DIRS} 
   ${EIGEN_LIB_ROOT_PATH} 
   ${DRONE_NAVIGATION_LIB_ROOT_PATH}/test/flight_control/drone_control_test_class.cpp 
 )
-target_compile_features(${TargetFlightController}_test PUBLIC cxx_std_17)
-target_link_libraries(${TargetFlightController}_test 
+target_compile_features(${TargetDroneControllerTest} PUBLIC cxx_std_17)
+target_link_libraries(${TargetDroneControllerTest} 
   PUBLIC 
     ${OpenCV_LIBS} 
     ${TargetFlightController} 
@@ -191,6 +211,7 @@ if(BUILD_FOR_ROS)
     ${TargetVfhPlanner} 
     ${TargetFlightController} 
     ${TargetStateEstimator} 
+    ${TargetSocketUDP} 
     DESTINATION lib/${PROJECT_NAME}
   )
 
