@@ -21,7 +21,7 @@ public:
 
   void runTest() {
 
-    std::cout << "[INFO] Running 'drone_yolo_wrapper_test'\n";
+    std::cout << "[INFO] Running 'drone_yolo_wrapper_test': unit tests\n\n";
 
     // ******************************************************************************************************************************** //
     std::cout << "[INFO] Test: read image from file\n";
@@ -88,12 +88,28 @@ public:
 
     cv::imwrite("src/yolo/dataset/000000017627_out.jpg", output_image);
 
-    // ******************************************************************************************************************************** //
-    std::cout << "[INFO] Test: inferetion timing\n";
+    std::cout << "[INFO] Test STOP\n\n";
+  }
 
+  void runTiming() {
+
+    std::cout << "[INFO] Running 'drone_yolo_wrapper_test': timing\n\n";
+
+    // ******************************************************************************************************************************** //
+    std::cout << "[INFO] Test: inference timing\n";
+
+    std::string image_path = "src/yolo/dataset/000000017627.jpg";
+    cv::Mat image = cv::imread(image_path);
+    Eigen::Vector2i target_loc = Eigen::Vector2i::Zero();
+
+    std::cout << "Running warmup inference\n";
+    this->setInput(image);
+    this->run();
+
+    int n_loops = 100;
     double avg_time = 0.0;
-    std::cout << "Running 100 loops\n";
-    for (int l = 0; l < 100; l++) {
+    std::cout << "Running " << n_loops << " loops\n";
+    for (int l = 0; l < n_loops; l++) {
       std::chrono::system_clock::time_point time_start = std::chrono::system_clock::now();
 
       this->setInput(image);
@@ -103,10 +119,10 @@ public:
       std::chrono::duration<double> time_passed = std::chrono::system_clock::now() - time_start;
       avg_time = time_passed.count();
     }
-    avg_time = avg_time / 100.0;
+    avg_time = avg_time / n_loops;
     std::cout << "Average inference time: " << avg_time << " [s]\n";
 
-    std::cout << "[INFO] Test STOP\n";
+    std::cout << "[INFO] Test STOP\n\n";
   }
 
 };
@@ -118,6 +134,7 @@ int main() {
 
   DRONE_NAVIGATION::YOLOWrapperTestClass yolo_wrapper_test_class = DRONE_NAVIGATION::YOLOWrapperTestClass();
   yolo_wrapper_test_class.runTest();
+  yolo_wrapper_test_class.runTiming();
 
   return 0;
 }

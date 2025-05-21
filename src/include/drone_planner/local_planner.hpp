@@ -91,6 +91,7 @@ public:
 
   Eigen::Vector3f getNext() const;
   
+  cv::Mat getHistImage() const;
   cv::Mat getCostImage() const;
 
   void reset();
@@ -102,8 +103,6 @@ protected:
   PointXYZ transformPoint(PointXYZ point) const;
   void processPointCloud();
 
-  void generateHistogram(const Eigen::Vector3f& position,
-                         PolarHistogram& histogram) const;
   CostFunctionOutput costFunction(const PolarPoint& candidate,
                                   const Eigen::Vector3f& position,
                                   const Eigen::Vector3f& velocity,
@@ -117,6 +116,8 @@ protected:
                              std::vector<MoveDirection>& direction_list) const;
   void planNext();
 
+  void generateHistImage(const PolarHistogram& histogram,
+                         cv::Mat& image_data) const;
   void generateCostImage(const Eigen::MatrixXf& cost_matrix,
                          const Eigen::MatrixXf& distance_matrix,
                          cv::Mat& image_data) const;
@@ -146,13 +147,13 @@ protected:
 
   bool cloud_updated_ = false;
   PointCloud<PointXYZ> cloud_cache_ = {};
-  PointCloud<PointXYZI> base_cloud_ = {};
   std::chrono::system_clock::time_point last_processing_time_;
 
   PolarHistogram histogram_ = {};
   
   Eigen::Vector3f next_ = Eigen::Vector3f::Zero();
 
+  cv::Mat hist_image_ = {};
   cv::Mat cost_image_ = {};
 };
 

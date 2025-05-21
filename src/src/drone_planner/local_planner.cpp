@@ -19,6 +19,7 @@ void LocalPlanner::initialize() {
   this->last_processing_time_ = std::chrono::system_clock::now();
 
   this->histogram_ = PolarHistogram(this->config_.alpha);
+  this->hist_image_ = cv::Mat(this->histogram_.getElevRes(), this->histogram_.getAzimRes(), CV_8UC3, cv::Scalar(0,0,0));
   this->cost_image_ = cv::Mat(this->histogram_.getElevRes(), this->histogram_.getAzimRes(), CV_8UC3, cv::Scalar(0,0,0));
 }
 
@@ -155,6 +156,7 @@ void LocalPlanner::processPointCloud() {
       float distanceSq = sqr(point.x) + sqr(point.y) + sqr(point.z);
       if (min_range_sq < distanceSq && distanceSq < max_range_sq) {
         PolarPoint polar = convertCartesianToPolar(toEigen(point));
+        if (!pointInsideFOV(this->fov_, polar)) continue;
         Eigen::Vector2i idx = convertPolarToHistogramIndex(polar, h_alpha);
         counter(idx.y(), idx.x())++;
         new_histogram.addToDistance(idx.y(), idx.x(), polar.radi);
@@ -206,27 +208,11 @@ void LocalPlanner::processPointCloud() {
     }
   }
 
+  this->histogram_ = new_histogram;
+  this->generateHistImage(this->histogram_, this->hist_image_);
+
   this->last_processing_time_ = std::chrono::system_clock::now();
   this->cloud_updated_ = false;
-}
-
-void LocalPlanner::generateHistogram(const Eigen::Vector3f& position, PolarHistogram& histogram) const {
-  Eigen::MatrixXi counter(histogram.getElevRes(), histogram.getAzimRes());
-  counter.fill(0);
-  for (auto point : this->base_cloud_) {
-    PolarPoint polar = convertCartesianToPolar(toEigen(point), position);
-    Eigen::Vector2i idx = convertPolarToHistogramIndex(polar, histogram.getAlpha());
-    counter(idx.y(), idx.x())++;
-    histogram.setDistance(idx.y(), idx.x(), histogram.getDistance(idx.y(), idx.x()) + polar.radi);
-  }
-  // Normalize distance bins
-  for (int elev = 0; elev < histogram.getElevRes(); elev++) {
-    for (int azim = 0; azim < histogram.getAzimRes(); azim++) {
-      if (counter(elev, azim) > 0) histogram.setDistance(elev, azim, histogram.getDistance(elev, azim) / counter(elev, azim));
-      else histogram.setDistance(elev, azim, 0.0f);
-    }
-  }
-  // @TODO Set obstacle border cells to non-zero (save margin)
 }
 
 CostFunctionOutput LocalPlanner::costFunction(
@@ -363,9 +349,25 @@ void LocalPlanner::reset() {
   this->prev_goal_array_.clear();
   this->extr_goal_array_.clear();
 
-  this->base_cloud_.clear();
-
   this->last_processing_time_ = std::chrono::system_clock::now();
+}
+
+void LocalPlanner::generateHistImage(
+  const PolarHistogram& histogram,
+  cv::Mat& image_data) const 
+{
+  float max_val = this->config_.sensor_max_range;
+
+  for (int e = this->histogram_.getElevRes() - 1; e >= 0; e--) {
+    for (int z = 0; z < this->histogram_.getAzimRes(); z++) {
+      float distance = 255.0f * (1.0f - std::min(1.0f, histogram.getDistance(e, z) / max_val));
+
+      cv::Vec3b& pixel = image_data.at<cv::Vec3b>(e, z);
+      pixel[0] = static_cast<uint8_t>(std::max(0.0f, std::min(255.0f, distance)));
+      pixel[1] = 0;
+      pixel[2] = 0;
+    }
+  }
 }
 
 void LocalPlanner::generateCostImage(
@@ -377,15 +379,19 @@ void LocalPlanner::generateCostImage(
 
   for (int e = this->histogram_.getElevRes() - 1; e >= 0; e--) {
     for (int z = 0; z < this->histogram_.getAzimRes(); z++) {
-      float distance_cost = 255.f * distance_matrix(e, z) / max_val;
-      float other_cost = 255.f * cost_matrix(e, z) / max_val;
+      float distance_cost = 255.0f * distance_matrix(e, z) / max_val;
+      float other_cost = 255.0f * cost_matrix(e, z) / max_val;
 
       cv::Vec3b& pixel = image_data.at<cv::Vec3b>(e, z);
-      pixel[0] = static_cast<uint8_t>(std::max(0.0f, std::min(255.f, distance_cost)));
-      pixel[1] = static_cast<uint8_t>(std::max(0.0f, std::min(255.f, other_cost)));
+      pixel[0] = static_cast<uint8_t>(std::max(0.0f, std::min(255.0f, distance_cost)));
+      pixel[1] = static_cast<uint8_t>(std::max(0.0f, std::min(255.0f, other_cost)));
       pixel[2] = 0;
     }
   }
+}
+
+cv::Mat LocalPlanner::getHistImage() const {
+  return this->hist_image_;
 }
 
 cv::Mat LocalPlanner::getCostImage() const {

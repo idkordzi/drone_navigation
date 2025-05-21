@@ -25,7 +25,7 @@ if(NOT DEFINED ONNXRUNTIME_LIB_ROOT_PATH)
   set(ONNXRUNTIME_DIR "${ONNXRUNTIME_LIB_ROOT_PATH}")
   message("ONNX runtime root path set to ${ONNXRUNTIME_LIB_ROOT_PATH}")
   file(MAKE_DIRECTORY ${ONNXRUNTIME_LIB_ROOT_PATH})
-  execute_process(COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/onnx_download.sh 1.20.1 0 ${ONNXRUNTIME_LIB_ROOT_PATH})
+  execute_process(COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/onnx_download.sh 1.20.1 1 ${ONNXRUNTIME_LIB_ROOT_PATH})
 endif()
 
 # Download Eigen library

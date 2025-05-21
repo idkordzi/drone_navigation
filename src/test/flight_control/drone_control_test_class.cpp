@@ -20,7 +20,7 @@ public:
 
   void runTest() {
 
-    std::cout << "[INFO] Running 'drone_fligth_controller_test'\n";
+    std::cout << "[INFO] Running 'drone_fligth_controller_test': unit tests\n\n";
 
     // ******************************************************************************************************************************** //
     std::cout << "[INFO] Test: standstill\n";
@@ -110,7 +110,7 @@ public:
     std::cout << "Print rotor control:\n";
     for (const auto& ctrl : rotor_control) std::cout << ctrl << std::endl;
 
-    std::cout << "[INFO] Test STOP\n";
+    std::cout << "[INFO] Test STOP\n\n";
   }
 };
 

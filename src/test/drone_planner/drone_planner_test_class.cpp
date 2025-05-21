@@ -23,7 +23,7 @@ public:
 
   void runTest() {
 
-    std::cout << "[INFO] Running 'drone_polar_histogram_test'\n";
+    std::cout << "[INFO] Running 'drone_polar_histogram_test': unit tests\n\n";
 
     PolarHistogram histogram = PolarHistogram(6); // cell size of 6 degrees
 
@@ -60,12 +60,21 @@ public:
 
   void runTest() {
 
-    std::cout << "[INFO] Running 'drone_local_planner_test'\n";
+    std::cout << "[INFO] Running 'drone_local_planner_test': unit tests\n\n";
+
+    Eigen::Vector3f position    = Eigen::Vector3f::Zero();
+    Eigen::Vector3f orientation = Eigen::Vector3f::Zero();
+    Eigen::Vector3f velocity    = Eigen::Vector3f::Zero();
+
+    Eigen::Vector3f goal = Eigen::Vector3f::Zero();
+
+    PointXYZ point_xyz = PointXYZ();
+    PointCloud<PointXYZ> point_cloud = PointCloud<PointXYZ>();
 
     // ******************************************************************************************************************************** //
     std::cout << "[INFO] Test: 'add new goal'\n";
 
-    Eigen::Vector3f goal = Eigen::Vector3f(1.0f, 1.0f, 1.0f);
+    goal = Eigen::Vector3f(1.0f, 1.0f, 1.0f);
     this->setGoal(goal);
 
     if (this->goal_updated_) {
@@ -129,16 +138,14 @@ public:
     // ******************************************************************************************************************************** //
     std::cout << "[INFO] Test: 'update state'\n";
 
-    Eigen::Vector3f position    = Eigen::Vector3f::Zero();
-    Eigen::Vector3f orientation = Eigen::Vector3f::Zero();
-    Eigen::Vector3f velocity    = Eigen::Vector3f::Zero();
+    position    = Eigen::Vector3f::Zero();
+    orientation = Eigen::Vector3f::Zero();
+    velocity    = Eigen::Vector3f::Zero();
 
     this->state_updated_ = false;
-
     this->setState(position, orientation, velocity);
 
     bool no_mismatch = true;
-
     if (this->state_updated_) {
       if (!eqmarg(this->position_.x(), 0.0f, 0.0f) ||
           !eqmarg(this->position_.y(), 0.0f, 0.0f) ||
@@ -161,7 +168,7 @@ public:
       if (!eqmarg(this->fov_.yaw_deg, 0.0f, 0.0f) || 
           !eqmarg(this->fov_.pitch_deg, 0.0f, 0.0f) || 
           !eqmarg(this->fov_.h_fov_deg, this->config_.camera_fov_h, 0.0f) || 
-            !eqmarg(this->fov_.v_fov_deg, this->config_.camera_fov_v, 0.0f)) {
+          !eqmarg(this->fov_.v_fov_deg, this->config_.camera_fov_v, 0.0f)) {
         no_mismatch = false;
         std::cout << "[ERROR] Mismatch on updated state: FOV\n";
       }
@@ -179,11 +186,9 @@ public:
     velocity    = Eigen::Vector3f(0.5f, 0.5f, 0.5f);
 
     this->state_updated_ = false;
-
     this->setState(position, orientation, velocity);
 
     no_mismatch = true;
-
     if (this->state_updated_) {
       if (!eqmarg(this->position_.x(), 1.0f, 0.0f) ||
           !eqmarg(this->position_.y(), 2.0f, 0.0f) ||
@@ -225,51 +230,20 @@ public:
 
     this->setState(position, orientation, velocity);
 
-    PointXYZ point_xyz = PointXYZ(1.0, 1.0, 1.0);
-    PointCloud<PointXYZ> point_cloud = PointCloud<PointXYZ>();
-    point_cloud.push_back(point_xyz);
-
-    this->base_cloud_.clear();
-    this->setPointCloud(point_cloud);
-
-    if (this->cloud_updated_) {
-      if (this->cloud_cache_.size() != 1)
-        std::cout << "[ERROR] Incorrect point cloud size: '" << this->cloud_cache_.size() << "' =/= 1\n";
-      else if(!eqmarg(this->cloud_cache_[0].x, 2.0f, 0.0f) || 
-              !eqmarg(this->cloud_cache_[0].y, 2.0f, 0.0f) || 
-              !eqmarg(this->cloud_cache_[0].z, 1.0f, 0.0f))
-        std::cout << "[ERROR] Mismatch on 3D point in added point cloud: (" << this->cloud_cache_[0].x << ", " 
-                  << this->cloud_cache_[0].y << ", " << this->cloud_cache_[0].z << ") =/= (2.0, 2.0, 1.0)\n";
-      else
-        std::cout << "[SUCCESS] New point cloud updated\n";
-    }
-    else
-      std::cout << "[ERROR] Could not add new point cloud\n";
-    
-    // ******************************************************************************************************************************** //
-    std::cout << "[INFO] Test: 'add new point cloud - non-zero orientation\n";
-
-    position    = Eigen::Vector3f(1.0f, 1.0f, 0.0f);
-    orientation = Eigen::Vector3f(0.0f, -PI_F / 4.0f, PI_F / 4.0f);
-    velocity    = Eigen::Vector3f::Zero();
-
-    this->setState(position, orientation, velocity);
-
-    point_xyz = PointXYZ(1.0, 0.0, 0.0);
+    point_xyz = PointXYZ(1.0, 1.0, 1.0);
     point_cloud.clear();
     point_cloud.push_back(point_xyz);
 
-    this->base_cloud_.clear();
     this->setPointCloud(point_cloud);
 
     if (this->cloud_updated_) {
       if (this->cloud_cache_.size() != 1)
         std::cout << "[ERROR] Incorrect point cloud size: '" << this->cloud_cache_.size() << "' =/= 1\n";
-      else if(!eqmarg(this->cloud_cache_[0].x, 1.5f, 0.001f) || 
-              !eqmarg(this->cloud_cache_[0].y, 1.5f, 0.001f) || 
-              !eqmarg(this->cloud_cache_[0].z, 0.707f, 0.001f))
+      else if(!eqmarg(this->cloud_cache_[0].x, 1.0f, 0.0f) || 
+              !eqmarg(this->cloud_cache_[0].y, 1.0f, 0.0f) || 
+              !eqmarg(this->cloud_cache_[0].z, 1.0f, 0.0f))
         std::cout << "[ERROR] Mismatch on 3D point in added point cloud: (" << this->cloud_cache_[0].x << ", " 
-                  << this->cloud_cache_[0].y << ", " << this->cloud_cache_[0].z << ") =/= (1.5, 1.5, 0.707..)\n";
+                  << this->cloud_cache_[0].y << ", " << this->cloud_cache_[0].z << ") =/= (1.0, 1.0, 1.0)\n";
       else
         std::cout << "[SUCCESS] New point cloud updated\n";
     }
@@ -287,84 +261,106 @@ public:
 
     this->fov_.h_fov_deg = 90.0f;
     this->fov_.v_fov_deg = 90.0f;
-
-    this->base_cloud_.clear();
-    this->base_cloud_.push_back(PointXYZI(1.0, 0.0, 0.0, 0.0));  // inside FOV - will be overwritten
-    this->base_cloud_.push_back(PointXYZI(0.5, 0.0, 1.0, 0.0));  // outside FOV - will be preserved
-    this->base_cloud_.push_back(PointXYZI(0.5, 0.0, 1.0, 10.0)); // too old - will be discarded
     
     point_cloud.clear();
-    point_cloud.push_back(PointXYZ(0.5, 0.0, 0.5)); // inside FOV - will be saved
-    point_cloud.push_back(PointXYZ(0.5, 0.0, 0.6)); // outside FOV - will be discarded
+    point_cloud.push_back(PointXYZ(0.5, 0.5, 0.5)); // inside FOV - will be saved
+    point_cloud.push_back(PointXYZ(0.5, 0.5, 1.0)); // outside FOV - will be discarded
     point_cloud.push_back(PointXYZ(15.0, 0.0, 0.0)); // outside sensor range - will be discarded
     this->setPointCloud(point_cloud);
 
     this->processPointCloud();
 
-    if (this->base_cloud_.size() == 2) {
-      if (eqmarg(this->base_cloud_[0].x, 0.5f, 0.0f) && 
-          eqmarg(this->base_cloud_[0].z, 0.5f, 0.0f) && 
-          eqmarg(this->base_cloud_[0].i, 0.0f, 0.0f) && 
-          eqmarg(this->base_cloud_[1].x, 0.5f, 0.0f) && 
-          eqmarg(this->base_cloud_[1].z, 1.0f, 0.0f) && 
-          this->base_cloud_[1].i > 0.0f)
-        std::cout << "[SUCCESS] Point cloud processed w/o issues\n";
+    Eigen::Vector2i index = convertPolarToHistogramIndex(convertCartesianToPolar(toEigen(point_cloud[0])), this->histogram_.getAlpha());
+
+    if (!this->histogram_.isEmpty()) {
+      if (eqmarg(this->histogram_.getDistance(index.y(), index.x()), 0.866f, 0.001f))
+        std::cout << "[SUCCESS] Point cloud processed w/o issues\nAt (" << index.y() << ", " << index.x() << ") distance: "
+                  << this->histogram_.getDistance(index.y(), index.x()) << " [m]\n";
       else
-        std::cout << "[ERROR] Point cloud contatins unexpected points\n";
+        std::cout << "[ERROR] Incorrect distance at (" << index.y() <<  ", " << index.x() << ") [deg] (elevation, azimuth)\n";
     }
     else
-      std::cout << "[ERROR] Incorrect point cloud size: '" << this->base_cloud_.size() << "' =/= 2\n";
-    std::cout << "Print cloud:\n";
-    for (const PointXYZI& point : this->base_cloud_) std::cout << "(" << point.x << ", " << point.y << ", " << point.z << ") (" << point.i << ")\n";
+      std::cout << "[ERROR] Histogram has not been updated (histogram empty)\n";
+    
+    // this->histogram_.setCell(index.y(), index.x(), 0.0f, 0.0f);
+    // if (this->histogram_.isEmpty())
+    //   std::cout << "[SUCCESS]\n";
+    // else
+    //   std::cout << "[ERROR]\n";
+
+    // for (int e = 0 ; e < this->histogram_.getElevRes(); e++) {
+    //   for (int z = 0 ; z < this->histogram_.getAzimRes(); z++)
+    //     std::cout << this->histogram_.getDistance(e,z) << " ";
+    //   std::cout << "\n";
+    // }
 
     // ******************************************************************************************************************************** //
     std::cout << "[INFO] Test: empty run\n";
 
-    this->base_cloud_.clear();
-    this->prev_goal_array_.clear();
-    this->next_ = Eigen::Vector3f::Zero();
-    this->rotation_matrix_ = Eigen::AngleAxisf(this->orientation_.z(), Eigen::Vector3f::UnitZ()) *
-                             Eigen::AngleAxisf(this->orientation_.y(), Eigen::Vector3f::UnitY()) *
-                             Eigen::AngleAxisf(this->orientation_.x(), Eigen::Vector3f::UnitX());
-
-    position    = Eigen::Vector3f::Zero();
+    position    = Eigen::Vector3f(0.0f, 0.0f, 1.0f);
     orientation = Eigen::Vector3f::Zero();
     velocity    = Eigen::Vector3f::Zero();
+
+    this->goal_ = Eigen::Vector3f::Zero();
+    this->next_ = Eigen::Vector3f(0.0f, 0.0f, 1.0f);
+    this->histogram_.clear();
     
     this->setState(position, orientation, velocity);
 
-    goal = Eigen::Vector3f(1.7321f, 0.0f, 0.0f);
-
+    goal = Eigen::Vector3f(1.0f, 0.0f, 0.0f); // in camera frame
     this->setGoal(goal);
 
     point_cloud.clear();
-
     this->setPointCloud(point_cloud);
 
     this->run();
 
     Eigen::Vector3f next_pos = this->getNext();
 
-    // due to character of polar histogram (even resolution) candidate direction cannot point straight forward
-    if (eqmarg(next_pos.x(), 0.889f, 0.001f) && 
-        eqmarg(next_pos.y(), 0.046f, 0.001f) && 
-        eqmarg(next_pos.z(), 0.453f, 0.001f))
+    if (eqmarg((this->goal_ - this->goal_pos_).norm(), this->config_.goal_min_dist, 0.001f) && 
+        eqmarg(std::abs(this->goal_.z() - this->goal_pos_.z()), this->config_.goal_min_alt_diff, 0.001f))
       std::cout << "[SUCCESS] Empty run w/o issues\n";
     else
-      std::cout << "[ERROR] Incorrect next goal drone pos: (" << next_pos.x() << ", " << next_pos.y() << ", " << next_pos.z() 
-                << ") =/= (0.889.., 0.046.., 0.453)\n";
+      std::cout << "[ERROR] calculated next goal position does not fulfill requirements\n";
+    
     std::cout << "Print target position: (" << this->goal_.x() << ", " << this->goal_.y() << ", " << this->goal_.z() << ")\n";
     std::cout << "Print goal position: (" << this->goal_pos_.x() << ", " << this->goal_pos_.y() << ", " << this->goal_pos_.z() 
-              << "), distance: (" << this->goal_pos_.norm() << ")\n";
+              << "), distance: (" << (this->goal_ - this->goal_pos_).norm() << ")\n";
+    std::cout << "Print next position: (" << next_pos.x() << ", " << next_pos.y() << ", " << next_pos.z() << "\n";
     
+    std::cout << "[INFO] Test STOP\n\n";
+  }
+
+  void runTiming() {
+
+    std::cout << "[INFO] Running 'drone_local_planner_test': timing\n\n";
+
+    Eigen::Vector3f position    = Eigen::Vector3f::Zero();
+    Eigen::Vector3f orientation = Eigen::Vector3f::Zero();
+    Eigen::Vector3f velocity    = Eigen::Vector3f::Zero();
+
+    Eigen::Vector3f goal = Eigen::Vector3f::Zero();
+
+    PointCloud<PointXYZ> point_cloud = PointCloud<PointXYZ>();
+
+    double avg_time = 0.0;
+    double max_time = 0.0;
+    double min_time = 1e3;
+    double passed = 0.0;
+    std::chrono::duration<double> time_passed;
+    int n_loops = 0;
+
     // ******************************************************************************************************************************** //
     std::cout << "[INFO] Test: timing adding point cloud\n";
 
-    position    = Eigen::Vector3f::Zero();
+    position    = Eigen::Vector3f(0.0f, 0.0f, 1.0f);
     orientation = Eigen::Vector3f::Zero();
     velocity    = Eigen::Vector3f::Zero();
 
-    goal = Eigen::Vector3f(1.0f, 0.0f, 1.0f);
+    this->next_ = Eigen::Vector3f(0.0f, 0.0f, 1.0f);
+    this->histogram_.clear();
+
+    goal = Eigen::Vector3f(1.0f, 0.0f, 0.0f);
 
     point_cloud.clear();
 
@@ -387,13 +383,11 @@ public:
 
     this->reset();
 
-    double avg_time = 0.0;
-    double max_time = 0.0;
-    double min_time = 1e3;
-    double passed = 0.0;
-    std::chrono::duration<double> time_passed;
-    int n_loops = 100;
-
+    avg_time = 0.0;
+    max_time = 0.0;
+    min_time = 1e3;
+    passed = 0.0;
+    n_loops = 100;
     std::cout << "Running " << n_loops << " loops\n";
     for (int l = 0; l < n_loops; l++) {
 
@@ -413,7 +407,8 @@ public:
     // ******************************************************************************************************************************** //
     std::cout << "[INFO] Test: timing processing point cloud\n";
 
-    this->base_cloud_.clear();
+    this->histogram_.clear();
+
     this->setState(position, orientation, velocity);
     this->setPointCloud(point_cloud);
     this->processPointCloud();
@@ -423,11 +418,9 @@ public:
     min_time = 1e3;
     passed = 0.0;
     n_loops = 100;
-
     std::cout << "Running " << n_loops << " loops\n";
     for (int l = 0; l < n_loops; l++) {
 
-      this->histogram_.clear();
       this->cloud_updated_ = true;
 
       std::chrono::system_clock::time_point time_start = std::chrono::system_clock::now();
@@ -446,16 +439,20 @@ public:
     // ******************************************************************************************************************************** //
     std::cout << "[INFO] Test: timing plannig route\n";
 
+    this->histogram_.clear();
+
+    this->setState(position, orientation, velocity);
+    this->setPointCloud(point_cloud);
+    this->processPointCloud();
+
     avg_time = 0.0;
     max_time = 0.0;
     min_time = 1e3;
     passed = 0.0;
     n_loops = 100;
-
     std::cout << "Running " << n_loops << " loops\n";
     for (int l = 0; l < n_loops; l++) {
 
-      this->histogram_.clear();
       this->cloud_updated_ = true;
 
       std::chrono::system_clock::time_point time_start = std::chrono::system_clock::now();
@@ -485,6 +482,7 @@ int main() {
 
   DRONE_NAVIGATION::LocalPlannerTestClass local_planner_test_class = DRONE_NAVIGATION::LocalPlannerTestClass();
   local_planner_test_class.runTest();
+  local_planner_test_class.runTiming();
 
   return 0;
 }
