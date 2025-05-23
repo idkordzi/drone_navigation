@@ -1,10 +1,15 @@
 cmake_minimum_required(VERSION 3.15)
 project(drone_navigation VERSION 1.0.0)
 
+if (NOT DEFINED CMAKE_CUDA_ARCHITECTURES)
+  set(CMAKE_CUDA_ARCHITECTURES 86)
+endif()
+
 if(NOT CMAKE_CXX_STANDARD)
   set(CMAKE_CXX_STANDARD 17)
   set(CMAKE_CXX_STANDARD_REQUIRED ON)
 endif()
+enable_language(CUDA)
 
 if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
   add_compile_options(-Wall -Wextra -Wpedantic)
@@ -23,9 +28,11 @@ endif()
 if(NOT DEFINED ONNXRUNTIME_LIB_ROOT_PATH)
   set(ONNXRUNTIME_LIB_ROOT_PATH "${CMAKE_CURRENT_BINARY_DIR}/_deps/lib_onnx")
   set(ONNXRUNTIME_DIR "${ONNXRUNTIME_LIB_ROOT_PATH}")
-  message("ONNX runtime root path set to ${ONNXRUNTIME_LIB_ROOT_PATH}")
-  file(MAKE_DIRECTORY ${ONNXRUNTIME_LIB_ROOT_PATH})
-  execute_process(COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/onnx_download.sh 1.20.1 1 ${ONNXRUNTIME_LIB_ROOT_PATH})
+  if (NOT EXISTS ${ONNXRUNTIME_DIR})
+    message("ONNX runtime root path set to ${ONNXRUNTIME_LIB_ROOT_PATH}")
+    file(MAKE_DIRECTORY ${ONNXRUNTIME_LIB_ROOT_PATH})
+    execute_process(COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/onnx_download.sh 1.20.1 1 ${ONNXRUNTIME_LIB_ROOT_PATH})
+  endif()
 endif()
 
 # Download Eigen library
@@ -33,12 +40,14 @@ if(NOT DEFINED EIGEN_LIB_ROOT_PATH)
   include(FetchContent)
   set(EIGEN_LIB_ROOT_PATH "${CMAKE_CURRENT_BINARY_DIR}/_deps/lib_eigen_src")
   message("Eigen library root path set to ${EIGEN_LIB_ROOT_PATH}")
-  FetchContent_Declare(
-    lib-eigen
-    GIT_REPOSITORY https://gitlab.com/libeigen/eigen.git
-    GIT_TAG 3.4.0
-    SOURCE_DIR "${EIGEN_LIB_ROOT_PATH}")
-  FetchContent_Populate(lib-eigen)
+  if (NOT EXISTS ${EIGEN_LIB_ROOT_PATH})
+    FetchContent_Declare(
+      lib-eigen
+      GIT_REPOSITORY https://gitlab.com/libeigen/eigen.git
+      GIT_TAG 3.4.0
+      SOURCE_DIR "${EIGEN_LIB_ROOT_PATH}")
+      FetchContent_Populate(lib-eigen)
+  endif()
 endif()
 
 # ################################################################
@@ -96,6 +105,18 @@ target_link_libraries(${TargetYoloWrapper}
     ${ONNXRUNTIME_DIR}/lib/libonnxruntime.so 
 )
 
+# Add vfh_planner CUDA kernels
+set(TargetVfhPlannerKernels drone_vfh_planner_kernels)
+add_library(${TargetVfhPlannerKernels}
+  STATIC
+    ${DRONE_NAVIGATION_LIB_ROOT_PATH}/src/drone_planner/local_planner_kernels.cu
+)
+target_compile_features(${TargetVfhPlannerKernels} PUBLIC cxx_std_17 cuda_std_17)
+target_include_directories(${TargetVfhPlannerKernels} 
+  PUBLIC 
+    ${DRONE_NAVIGATION_LIB_ROOT_PATH}/include/drone_planner 
+)
+
 # Add vfh_planner
 set(TargetVfhPlanner drone_vfh_planner)
 add_library(${TargetVfhPlanner}
@@ -114,6 +135,7 @@ target_include_directories(${TargetVfhPlanner}
 target_link_libraries(${TargetVfhPlanner} 
   PUBLIC 
     ${OpenCV_LIBS} 
+    ${TargetVfhPlannerKernels} 
 )
 
 # Add flight_controller

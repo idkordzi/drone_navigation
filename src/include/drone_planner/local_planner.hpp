@@ -1,11 +1,13 @@
 #pragma once
 
 #include <chrono>
+#include <memory>
 #include "Eigen/Dense"
 #include "opencv2/opencv.hpp"
 #include "common.hpp"
-#include "polar_histogram.hpp"
 #include "point_cloud.hpp"
+#include "polar_histogram.hpp"
+#include "local_planner_kernels.hpp"
 
 
 namespace DRONE_NAVIGATION {
@@ -14,7 +16,7 @@ struct LocalPlannerConfig {
 
   // general params
   float thread_freq = 10.0; // [Hz]
-
+  bool en_cuda = true;
   bool skip_planning = false;
 
   // camera params
@@ -124,6 +126,8 @@ protected:
   
   LocalPlannerConfig config_ = {};
   CostParams cost_params_ = {};
+
+  std::unique_ptr<DRONE_NAVIGATION_KERNELS::LocalPlannerKernels> kernels_ = {};
 
   bool drone_ready_ = false;
 

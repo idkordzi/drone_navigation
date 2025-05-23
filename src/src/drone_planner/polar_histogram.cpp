@@ -3,7 +3,9 @@
 
 namespace DRONE_NAVIGATION {
 
-PolarHistogram::PolarHistogram() {}
+PolarHistogram::PolarHistogram() {
+  this->clear();
+}
 
 PolarHistogram::PolarHistogram(int alpha)
 : alpha_{alpha}, azim_dim_{360 / alpha}, elev_dim_{180 / alpha}, distance_(elev_dim_, azim_dim_), age_(elev_dim_, azim_dim_)

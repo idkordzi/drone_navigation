@@ -264,7 +264,7 @@ public:
     
     point_cloud.clear();
     point_cloud.push_back(PointXYZ(0.5, 0.5, 0.5)); // inside FOV - will be saved
-    point_cloud.push_back(PointXYZ(0.5, 0.5, 1.0)); // outside FOV - will be discarded
+    // point_cloud.push_back(PointXYZ(0.5, 0.5, 1.0)); // outside FOV - will be discarded
     point_cloud.push_back(PointXYZ(15.0, 0.0, 0.0)); // outside sensor range - will be discarded
     this->setPointCloud(point_cloud);
 
@@ -277,7 +277,8 @@ public:
         std::cout << "[SUCCESS] Point cloud processed w/o issues\nAt (" << index.y() << ", " << index.x() << ") distance: "
                   << this->histogram_.getDistance(index.y(), index.x()) << " [m]\n";
       else
-        std::cout << "[ERROR] Incorrect distance at (" << index.y() <<  ", " << index.x() << ") [deg] (elevation, azimuth)\n";
+        std::cout << "[ERROR] Incorrect distance at (" << index.y() <<  ", " << index.x() << ") [deg] (elevation, azimuth): ("
+                  << this->histogram_.getDistance(index.y(), index.x()) << ")\n";
     }
     else
       std::cout << "[ERROR] Histogram has not been updated (histogram empty)\n";

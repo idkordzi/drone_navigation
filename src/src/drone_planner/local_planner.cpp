@@ -21,6 +21,16 @@ void LocalPlanner::initialize() {
   this->histogram_ = PolarHistogram(this->config_.alpha);
   this->hist_image_ = cv::Mat(this->histogram_.getElevRes(), this->histogram_.getAzimRes(), CV_8UC3, cv::Scalar(0,0,0));
   this->cost_image_ = cv::Mat(this->histogram_.getElevRes(), this->histogram_.getAzimRes(), CV_8UC3, cv::Scalar(0,0,0));
+
+  DRONE_NAVIGATION_KERNELS::KernelsConfig k_config;
+  k_config.alpha = this->config_.alpha;
+  k_config.elev_res = this->histogram_.getElevRes();
+  k_config.azim_res = this->histogram_.getAzimRes();
+  k_config.flat_size = k_config.elev_res * k_config.azim_res;
+  k_config.min_distance = this->config_.sensor_min_range;
+  k_config.max_distance = this->config_.sensor_max_range;
+  k_config.max_age = this->config_.point_max_age;
+  this->kernels_ = std::make_unique<DRONE_NAVIGATION_KERNELS::LocalPlannerKernels>(k_config);
 }
 
 void LocalPlanner::setState(Eigen::Vector3f position, Eigen::Vector3f orientation, Eigen::Vector3f velocity) {
@@ -152,16 +162,35 @@ void LocalPlanner::processPointCloud() {
   double elapsed = time_passed.count();
 
   if (this->cloud_updated_) {
-    for (const PointXYZ& point : this->cloud_cache_) {
-      float distanceSq = sqr(point.x) + sqr(point.y) + sqr(point.z);
-      if (min_range_sq < distanceSq && distanceSq < max_range_sq) {
-        PolarPoint polar = convertCartesianToPolar(toEigen(point));
-        if (!pointInsideFOV(this->fov_, polar)) continue;
-        Eigen::Vector2i idx = convertPolarToHistogramIndex(polar, h_alpha);
-        counter(idx.y(), idx.x())++;
-        new_histogram.addToDistance(idx.y(), idx.x(), polar.radi);
-        new_histogram.setAge(idx.y(), idx.x(), 0.0f);
+    if (this->config_.en_cuda) {
+
+      const float* k_point_cloud = (const float*)this->cloud_cache_.cloud_.data();
+      this->kernels_->processIncomingPointCloud(k_point_cloud, this->cloud_cache_.size());
+      float* k_distance = this->kernels_->getHistogramData();
+      int* k_counter = this->kernels_->getCounterData();
+
+      for (int elev = 0; elev < h_elev; elev++) {
+        for (int azim = 0; azim < h_azim; azim++) {
+          new_histogram.setDistance(elev, azim, k_distance[elev*h_azim+azim]);
+          counter(elev, azim) = k_counter[elev*h_azim+azim];
+        }
       }
+
+    }
+    else {
+
+      for (const PointXYZ& point : this->cloud_cache_) {
+        float distanceSq = sqr(point.x) + sqr(point.y) + sqr(point.z);
+        if (min_range_sq <= distanceSq && distanceSq <= max_range_sq) {
+          PolarPoint polar = convertCartesianToPolar(toEigen(point));
+          // if (!pointInsideFOV(this->fov_, polar)) continue;
+          Eigen::Vector2i idx = convertPolarToHistogramIndex(polar, h_alpha);
+          counter(idx.y(), idx.x())++;
+          new_histogram.addToDistance(idx.y(), idx.x(), polar.radi);
+          // new_histogram.setAge(idx.y(), idx.x(), 0.0f); // unnecessary since 'new_histogram' is initialized with '0'
+        }
+      }
+
     }
   }
 
