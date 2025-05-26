@@ -388,7 +388,7 @@ public:
     max_time = 0.0;
     min_time = 1e3;
     passed = 0.0;
-    n_loops = 100;
+    n_loops = 1000;
     std::cout << "Running " << n_loops << " loops\n";
     for (int l = 0; l < n_loops; l++) {
 
@@ -418,7 +418,7 @@ public:
     max_time = 0.0;
     min_time = 1e3;
     passed = 0.0;
-    n_loops = 100;
+    n_loops = 1000;
     std::cout << "Running " << n_loops << " loops\n";
     for (int l = 0; l < n_loops; l++) {
 
@@ -450,7 +450,7 @@ public:
     max_time = 0.0;
     min_time = 1e3;
     passed = 0.0;
-    n_loops = 100;
+    n_loops = 1000;
     std::cout << "Running " << n_loops << " loops\n";
     for (int l = 0; l < n_loops; l++) {
 

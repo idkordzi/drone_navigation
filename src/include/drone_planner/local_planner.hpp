@@ -51,7 +51,7 @@ struct CostParams {
   float yaw_cost_param      = 0.5f;
   float pitch_cost_param    = 3.0f;
   float velocity_cost_param = 1.5f;
-  float obstacle_cost_param = 5.0f;
+  float obstacle_cost_param = 10.0f;
 };
 
 struct CostFunctionOutput {
@@ -129,33 +129,32 @@ protected:
 
   std::unique_ptr<DRONE_NAVIGATION_KERNELS::LocalPlannerKernels> kernels_ = {};
 
-  bool drone_ready_ = false;
+  bool drone_ready_   = false;
+  bool goal_updated_  = false;
+  bool state_updated_ = false;
+  bool cloud_updated_ = false;
 
-  bool goal_updated_ = false;
-  Eigen::Vector3f goal_ = Eigen::Vector3f::Zero();
+  Eigen::Vector3f goal_     = Eigen::Vector3f::Zero();
   Eigen::Vector3f goal_pos_ = Eigen::Vector3f::Zero();
+  Eigen::Vector3f next_     = Eigen::Vector3f::Zero();
   
   std::vector<Eigen::Vector3f> prev_goal_array_ = {};
   std::vector<Eigen::Vector3f> extr_goal_array_ = {};
 
-  bool state_updated_ = false;
   Eigen::Vector3f position_     = Eigen::Vector3f::Zero(); // drone position in odom frame
   Eigen::Vector3f orientation_  = Eigen::Vector3f::Zero(); // drone orientation in odom frame
   Eigen::Vector3f lin_velocity_ = Eigen::Vector3f::Zero(); // drone linear velocity in odom frame
 
   Eigen::Vector3f prev_position_ = Eigen::Vector3f::Zero();
 
+  FOV fov_ = {};
   Eigen::Matrix3f rotation_matrix_ = Eigen::Vector3f::Ones().asDiagonal();
   float translation_flatten_[12] = {};
-  FOV fov_ = {};
 
-  bool cloud_updated_ = false;
   PointCloud<PointXYZ> cloud_cache_ = {};
   std::chrono::system_clock::time_point last_processing_time_;
 
   PolarHistogram histogram_ = {};
-  
-  Eigen::Vector3f next_ = Eigen::Vector3f::Zero();
 
   cv::Mat hist_image_ = {};
   cv::Mat cost_image_ = {};

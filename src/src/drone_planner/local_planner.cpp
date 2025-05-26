@@ -34,6 +34,9 @@ void LocalPlanner::initialize() {
 }
 
 void LocalPlanner::setState(Eigen::Vector3f position, Eigen::Vector3f orientation, Eigen::Vector3f velocity) {
+
+  this->prev_position_ = this->position_;
+
   this->position_     = position;
   this->orientation_  = orientation;
   this->lin_velocity_ = velocity;
@@ -64,7 +67,6 @@ void LocalPlanner::setGoal(Eigen::Vector3f goal) {
   
   if ((this->goal_ - new_goal).norm() > this->config_.goal_dev_margin) {
 
-    this->prev_position_ = this->position_;
     this->prev_goal_array_.push_back(this->goal_);
     if (this->prev_goal_array_.size() > this->config_.prev_goal_num)
       this->prev_goal_array_ = std::vector<Eigen::Vector3f>(this->prev_goal_array_.begin()+1, this->prev_goal_array_.end());
@@ -77,7 +79,6 @@ void LocalPlanner::setGoal(Eigen::Vector3f goal) {
                                         this->config_.goal_min_dist);
     wrapPolar(desired_pos);
     this->goal_pos_ = convertPolarToCartesian(desired_pos, this->goal_);
-    // this->goal_pos_ = this->goal_;
 
     this->goal_updated_ = true;
   }
@@ -86,12 +87,7 @@ void LocalPlanner::setGoal(Eigen::Vector3f goal) {
 }
 
 void LocalPlanner::setPointCloud(const PointCloud<PointXYZ>& cloud) {
-  this->cloud_cache_.cloud_.clear();
-  for (auto point : cloud) {
-    if (!std::isnan(point.x) && !std::isnan(point.y) && !std::isnan(point.z))
-      // this->cloud_cache_.cloud_.push_back(this->transformPoint(point)); // moved to 'processPointCloud'
-      this->cloud_cache_.cloud_.push_back(point);
-  }
+  this->cloud_cache_ = cloud;
   this->cloud_updated_ = true;
 }
 
@@ -108,10 +104,6 @@ void LocalPlanner::run() {
 
   // Drone away from final goal
   if ((this->goal_pos_-this->position_).norm() > this->config_.drone_pos_margin) {
-    // Has not reached middle point yet
-    if ((this->next_-this->position_).norm() > this->config_.drone_pos_margin) {
-      return; // uphold previous goal pos
-    }
     if (this->goal_updated_ || this->cloud_updated_) {
       this->processPointCloud();
     }
@@ -119,7 +111,7 @@ void LocalPlanner::run() {
   }
   // Drone within acceptable margin
   else {
-    this->next_ = this->goal_;
+    this->next_ = this->goal_pos_;
   }
 }
 
@@ -180,6 +172,7 @@ void LocalPlanner::processPointCloud() {
     else {
 
       for (const PointXYZ& point : this->cloud_cache_) {
+        if (std::isnan(point.x) || std::isnan(point.y) || std::isnan(point.z)) continue;
         float distanceSq = sqr(point.x) + sqr(point.y) + sqr(point.z);
         if (min_range_sq <= distanceSq && distanceSq <= max_range_sq) {
           PolarPoint polar = convertCartesianToPolar(toEigen(point));
@@ -250,22 +243,22 @@ CostFunctionOutput LocalPlanner::costFunction(
   const Eigen::Vector3f& velocity, 
   float obstacle_distance) const
 {
-  const PolarPoint facing_goal = convertCartesianToPolar(this->goal_pos_, position);
-  const float angle_diff = angleDifference(candidate.azim, facing_goal.azim);
+  PolarPoint facing_goal = convertCartesianToPolar(this->goal_pos_, position);
+  float angle_diff = angleDifference(candidate.azim, facing_goal.azim);
 
-  const float goal_distance = (this->goal_pos_ - position).norm();
-  const Eigen::Vector3f candidate_velocity_cartesian = convertPolarToCartesian(candidate, Eigen::Vector3f(0.0f, 0.0f, 0.0f));
+  float goal_distance = (this->goal_pos_ - position).norm();
+  Eigen::Vector3f candidate_velocity_cartesian = convertPolarToCartesian(candidate, Eigen::Vector3f(0.0f, 0.0f, 0.0f));
 
-  const float velocity_cost = this->cost_params_.velocity_cost_param * (velocity.norm() - candidate_velocity_cartesian.normalized().dot(velocity));
+  float velocity_cost = this->cost_params_.velocity_cost_param * (velocity.norm() - candidate_velocity_cartesian.normalized().dot(velocity));
 
-  const float yaw_cost = this->cost_params_.yaw_cost_param * sqr(angle_diff);
-  float pitch_cost     = this->cost_params_.pitch_cost_param * sqr(candidate.elev - facing_goal.elev);
+  float yaw_cost   =  this->cost_params_.yaw_cost_param * sqr(angle_diff);
+  float pitch_cost = -this->cost_params_.pitch_cost_param * sqr(candidate.elev - facing_goal.elev);
 
   // Increase the pitch cost starting at 5m from the goal (forcing the drone to goal altitude)
-  if (goal_distance < 5.0f) pitch_cost = pitch_cost / ((0.2f * goal_distance) * (0.2f * goal_distance));
+  if (goal_distance < 5.0f) pitch_cost = pitch_cost / (0.05f * sqr(goal_distance));
 
-  const float d = this->cost_params_.obstacle_cost_param - obstacle_distance;
-  const float distance_cost = obstacle_distance > 0.0f ? 5000.0f * (1 + d / sqrt(1 + d * d)) : 0.0f;
+  float d = this->cost_params_.obstacle_cost_param - obstacle_distance;
+  float distance_cost = obstacle_distance > 0.0f ? 5000.0f * (1 + d / std::sqrt(1 + d * d)) : 0.0f;
 
   return CostFunctionOutput(distance_cost, velocity_cost + yaw_cost + pitch_cost);
 }
