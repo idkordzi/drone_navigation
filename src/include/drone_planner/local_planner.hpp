@@ -17,9 +17,11 @@ namespace DRONE_NAVIGATION {
 struct LocalPlannerConfig {
 
   // general params
-  float thread_freq = 10.0; // [Hz]
+  float thread_freq = 10.0f; // [Hz]
   bool en_cuda = true;
   bool skip_planning = false;
+
+  float init_altitude = 2.0f; // [m]
 
   // camera params
   float sensor_min_range = 0.2f;  // [m]
@@ -41,7 +43,7 @@ struct LocalPlannerConfig {
   unsigned extr_goal_num = 1;
 
   float goal_min_dist = 4.0f; // [m]
-  float goal_min_alt_diff = 1.0; // [m] , cannot be larger than 'goal_min_dist_'
+  float goal_min_alt_diff = 1.0f; // [m] , cannot be larger than 'goal_min_dist_'
 
   // trajectory planning
   unsigned max_candidates_per_it = 3;

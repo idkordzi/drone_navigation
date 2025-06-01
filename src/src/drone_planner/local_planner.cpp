@@ -93,10 +93,9 @@ void LocalPlanner::setPointCloud(const PointCloud<PointXYZ>& cloud) {
 
 void LocalPlanner::run() {
 
-  // Reach ~(0,0,1) on startup
   if (!this->drone_ready_) {
-    if (this->position_.z() < 0.9f)
-      this->goal_pos_ = Eigen::Vector3f(0.0f, 0.0f, 1.0f);
+    if (this->position_.z() < this->config_.init_altitude-0.1f)
+      this->goal_pos_ = Eigen::Vector3f(0.0f, 0.0f, this->config_.init_altitude);
     else
       this->drone_ready_ = true;
   }
