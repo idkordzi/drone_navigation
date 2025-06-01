@@ -2,8 +2,10 @@
 
 #include <chrono>
 #include <memory>
-#include "Eigen/Dense"
+
 #include "opencv2/opencv.hpp"
+#include "Eigen/Dense"
+
 #include "common.hpp"
 #include "point_cloud.hpp"
 #include "polar_histogram.hpp"
@@ -38,20 +40,21 @@ struct LocalPlannerConfig {
   unsigned prev_goal_num = 3;
   unsigned extr_goal_num = 1;
 
-  float goal_min_dist = 1.0f; // [m]
-  float goal_min_alt_diff = 0.5; // [m] , cannot be larger than 'goal_min_dist_'
+  float goal_min_dist = 4.0f; // [m]
+  float goal_min_alt_diff = 1.0; // [m] , cannot be larger than 'goal_min_dist_'
 
   // trajectory planning
   unsigned max_candidates_per_it = 3;
   float drone_pos_margin = 0.1f; // [m]
   float planning_step = 1.0f; // [m]
-};
 
-struct CostParams {
-  float yaw_cost_param      = 0.5f;
-  float pitch_cost_param    = 3.0f;
-  float velocity_cost_param = 1.5f;
-  float obstacle_cost_param = 10.0f;
+  // flight direction cost params
+  float yaw_cost_param        = 0.5f;
+  float pitch_block_distance  = 6.0f;
+  float pitch_cost_param      = 3.0f;
+  float velocity_cost_param   = 1.5f;
+  float obstacle_min_distance = 2.0f;
+  float obstacle_cost_param   = 5000.0f;
 };
 
 struct CostFunctionOutput {
@@ -125,7 +128,6 @@ protected:
                          cv::Mat& image_data) const;
   
   LocalPlannerConfig config_ = {};
-  CostParams cost_params_ = {};
 
   std::unique_ptr<DRONE_NAVIGATION_KERNELS::LocalPlannerKernels> kernels_ = {};
 

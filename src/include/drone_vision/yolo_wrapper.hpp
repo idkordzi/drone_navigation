@@ -5,7 +5,6 @@
 #include <memory>
 
 #include "opencv2/opencv.hpp"
-
 #include "Eigen/Dense"
 
 #include "yolo_detector.hpp"
@@ -18,7 +17,7 @@ inline int sqr(int x) {return x*x;}
 struct YOLOWrapperConfig {
 
   // yolo params
-  bool use_gpu = true;
+  bool en_cuda = true;
   unsigned yolo_in_width = 640;
   unsigned yolo_in_height = 360;
 

@@ -12,7 +12,7 @@ YOLOWrapper::YOLOWrapper(YOLOWrapperConfig config) : config_(config) {
 }
 
 void YOLOWrapper::initialize() {
-  this->detector_ = std::make_unique<YOLO_DETECTOR::YOLO12Detector>(this->config_.model_path, this->config_.labels_path, this->config_.use_gpu);
+  this->detector_ = std::make_unique<YOLO_DETECTOR::YOLO12Detector>(this->config_.model_path, this->config_.labels_path, this->config_.en_cuda);
   this->input_    = cv::Mat(this->config_.yolo_in_height, this->config_.yolo_in_width, CV_8UC3, cv::Scalar(0, 0, 0));
 
   this->target_loc_.fill(-1);

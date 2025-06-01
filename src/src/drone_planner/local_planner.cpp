@@ -95,11 +95,10 @@ void LocalPlanner::run() {
 
   // Reach ~(0,0,1) on startup
   if (!this->drone_ready_) {
-    if (this->position_.z() < 0.9f) {
-      this->next_ = Eigen::Vector3f(0.0f, 0.0f, 1.0f);
-      return;
-    }
-    else this->drone_ready_ = true;
+    if (this->position_.z() < 0.9f)
+      this->goal_pos_ = Eigen::Vector3f(0.0f, 0.0f, 1.0f);
+    else
+      this->drone_ready_ = true;
   }
 
   // Drone away from final goal
@@ -247,18 +246,19 @@ CostFunctionOutput LocalPlanner::costFunction(
   float angle_diff = angleDifference(candidate.azim, facing_goal.azim);
 
   float goal_distance = (this->goal_pos_ - position).norm();
-  Eigen::Vector3f candidate_velocity_cartesian = convertPolarToCartesian(candidate, Eigen::Vector3f(0.0f, 0.0f, 0.0f));
+  Eigen::Vector3f candidate_velocity_cartesian = convertPolarToCartesian(candidate);
 
-  float velocity_cost = this->cost_params_.velocity_cost_param * (velocity.norm() - candidate_velocity_cartesian.normalized().dot(velocity));
+  float velocity_cost = this->config_.velocity_cost_param * (velocity.norm() - candidate_velocity_cartesian.normalized().dot(velocity));
 
-  float yaw_cost   =  this->cost_params_.yaw_cost_param * sqr(angle_diff);
-  float pitch_cost = -this->cost_params_.pitch_cost_param * sqr(candidate.elev - facing_goal.elev);
+  float yaw_cost   = this->config_.yaw_cost_param * sqr(angle_diff);
+  float pitch_cost = this->config_.pitch_cost_param * sqr(candidate.elev - facing_goal.elev);
 
   // Increase the pitch cost starting at 5m from the goal (forcing the drone to goal altitude)
-  if (goal_distance < 5.0f) pitch_cost = pitch_cost / (0.05f * sqr(goal_distance));
+  if (goal_distance < this->config_.pitch_block_distance)
+    pitch_cost = pitch_cost * sqr(this->config_.pitch_block_distance) / sqr(goal_distance);
 
-  float d = this->cost_params_.obstacle_cost_param - obstacle_distance;
-  float distance_cost = obstacle_distance > 0.0f ? 5000.0f * (1 + d / std::sqrt(1 + d * d)) : 0.0f;
+  float d = this->config_.obstacle_min_distance - obstacle_distance;
+  float distance_cost = obstacle_distance > 0.0f ? this->config_.obstacle_cost_param * (1 + d / std::sqrt(1 + d * d)) : 0.0f;
 
   return CostFunctionOutput(distance_cost, velocity_cost + yaw_cost + pitch_cost);
 }
@@ -357,7 +357,11 @@ void LocalPlanner::planNext() {
   float next_pos_dist = (this->position_ - this->goal_pos_).norm();
   float step_size = next_pos_dist > this->config_.planning_step ? this->config_.planning_step : next_pos_dist;
 
-  this->next_ = convertPolarToCartesian(PolarPoint(best_move.elevation, best_move.azimuth, step_size), this->position_);
+  // Reach ~(0,0,1) on startup
+  if (!this->drone_ready_)
+    this->next_ = Eigen::Vector3f(0.0f, 0.0f, 1.0f);
+  else
+    this->next_ = convertPolarToCartesian(PolarPoint(best_move.elevation, best_move.azimuth, step_size), this->position_);
 
   this->cost_image_ = cost_image;
 }
@@ -381,11 +385,12 @@ void LocalPlanner::generateHistImage(
   float max_val = this->config_.sensor_max_range;
 
   for (int e = this->histogram_.getElevRes() - 1; e >= 0; e--) {
-    for (int z = 0; z < this->histogram_.getAzimRes(); z++) {
-      float distance = 255.0f * (1.0f - std::min(1.0f, histogram.getDistance(e, z) / max_val));
+    for (int z = this->histogram_.getAzimRes() - 1; z >=0; z--) {
+      float distance = histogram.getDistance(e, z);
+      float distance_display = distance > 0.0f ? 255.0f * (1.0f - (distance / max_val)) : 0.0f;
 
       cv::Vec3b& pixel = image_data.at<cv::Vec3b>(e, z);
-      pixel[0] = static_cast<uint8_t>(std::max(0.0f, std::min(255.0f, distance)));
+      pixel[0] = static_cast<uint8_t>(std::max(0.0f, std::min(255.0f, distance_display)));
       pixel[1] = 0;
       pixel[2] = 0;
     }
@@ -400,7 +405,7 @@ void LocalPlanner::generateCostImage(
   float max_val = std::max(cost_matrix.maxCoeff(), distance_matrix.maxCoeff());
 
   for (int e = this->histogram_.getElevRes() - 1; e >= 0; e--) {
-    for (int z = 0; z < this->histogram_.getAzimRes(); z++) {
+    for (int z = this->histogram_.getAzimRes() - 1; z >=0; z--) {
       float distance_cost = 255.0f * distance_matrix(e, z) / max_val;
       float other_cost = 255.0f * cost_matrix(e, z) / max_val;
 
