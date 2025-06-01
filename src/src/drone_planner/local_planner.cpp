@@ -358,7 +358,7 @@ void LocalPlanner::planNext() {
 
   // Reach ~(0,0,1) on startup
   if (!this->drone_ready_)
-    this->next_ = Eigen::Vector3f(0.0f, 0.0f, 1.0f);
+    this->next_ = Eigen::Vector3f(0.0f, 0.0f, this->config_.init_altitude);
   else
     this->next_ = convertPolarToCartesian(PolarPoint(best_move.elevation, best_move.azimuth, step_size), this->position_);
 
