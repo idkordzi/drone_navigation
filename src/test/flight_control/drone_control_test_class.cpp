@@ -2,6 +2,7 @@
 #include "Eigen/Dense"
 
 #include "flight_controller.hpp"
+#include "state_estimator.hpp"
 
 #include <iostream>
 #include <set>
@@ -114,6 +115,76 @@ public:
   }
 };
 
+class StateEstimatorTestClass : public StateEstimator {
+
+public:
+  StateEstimatorTestClass() {}
+  StateEstimatorTestClass(StateEstimatorConfig config) : StateEstimator(config) {}
+  ~StateEstimatorTestClass() = default;
+
+  void runTest() {
+
+    std::cout << "[INFO] Running 'drone_state_estimator_test': unit tests\n\n";
+
+    // ******************************************************************************************************************************** //
+    std::cout << "[INFO] Test: output afte initiallization\n";
+
+    Eigen::VectorXf out = this->getState();
+
+    if (out(0)  == 0 && 
+        out(1)  == 0 && 
+        out(2)  == 0 && 
+        out(3)  == 0 && 
+        out(4)  == 0 && 
+        out(5)  == 0 && 
+        out(6)  == 0 && 
+        out(7)  == 0 && 
+        out(8)  == 0 && 
+        out(9)  == 0 && 
+        out(10) == 0 && 
+        out(11) == 0 )
+      std::cout << "[SUCCESS] Initial state: OK\n";
+    else
+      std::cout << "[ERROR] Wrong initial state\n";
+
+    // ******************************************************************************************************************************** //
+    std::cout << "[INFO] Test: running estimation - sanity check\n";
+
+    Eigen::VectorXf input = Eigen::Vector<float, 4>::Zero();
+    Eigen::VectorXf measurement = Eigen::Vector<float, 6>::Zero();
+
+    input(0) = 1000.0;
+    input(1) = 1000.0;
+    input(2) = 1000.0;
+    input(3) = 1000.0;
+
+    measurement(0) = 0.1;
+    measurement(1) = 0.0;
+    measurement(2) = 0.1;
+
+    float dt = 0.01;
+
+    this->runEstimate(input, measurement, dt);
+    out = this->getState();
+
+    if (out(0)  != 0 && 
+        out(1)  != 0 && 
+        out(2)  != 0 && 
+        out(3)  != 0 && 
+        out(4)  != 0 && 
+        out(5)  != 0)
+      std::cout << "[SUCCESS] Sanity run: OK\n";
+    else {
+      std::cout << "[ERROR] State has not been updated after non zero input run\n";
+      for (auto &el : out) {
+        std::cout << el << std::endl;
+      }
+    }
+
+    std::cout << "[INFO] Test STOP\n\n";
+  }
+};
+
 } // namespace DRONE_NAVIGATION
 
 
@@ -129,6 +200,11 @@ int main() {
 
   DRONE_NAVIGATION::FlightControllerTestClass flight_controller_test_class = DRONE_NAVIGATION::FlightControllerTestClass(flight_controller_config);
   flight_controller_test_class.runTest();
+
+  DRONE_NAVIGATION::StateEstimatorConfig state_estimator_config;
+
+  DRONE_NAVIGATION::StateEstimatorTestClass state_estimator_test_class = DRONE_NAVIGATION::StateEstimatorTestClass(state_estimator_config);
+  state_estimator_test_class.runTest();
 
   return 0;
 }

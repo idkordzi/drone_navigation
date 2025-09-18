@@ -106,7 +106,7 @@ public:
     this->setInput(image);
     this->run();
 
-    int n_loops = 100;
+    int n_loops = 1000;
     double avg_time = 0.0;
     std::cout << "Running " << n_loops << " loops\n";
     for (int l = 0; l < n_loops; l++) {

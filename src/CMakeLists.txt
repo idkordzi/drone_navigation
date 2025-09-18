@@ -220,6 +220,7 @@ target_link_libraries(${TargetDroneControllerTest}
   PUBLIC 
     ${OpenCV_LIBS} 
     ${TargetFlightController} 
+    ${TargetStateEstimator} 
 )
 
 # ################################################################

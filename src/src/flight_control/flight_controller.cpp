@@ -51,7 +51,9 @@ std::vector<float> FlightController::calculateControl(Eigen::Vector3f position, 
  
   Eigen::Vector3f pos_diff = -goal_rotated;
 
-  float goal_ang_x = clip(std::atan( pos_diff.y()), -this->config_.ang_x_lim, this->config_.ang_x_lim);
+  // float goal_ang_x = clip(std::atan( pos_diff.y()), -this->config_.ang_x_lim, this->config_.ang_x_lim);
+  float goal_ang_x = 0.0; // focus on yaw change instead of linear movement
+  
   float goal_ang_y = clip(std::atan(-pos_diff.x()), -this->config_.ang_y_lim, this->config_.ang_y_lim);
 
   float slope = goal_rotated.y() / (goal_rotated.x() + machine_error);
