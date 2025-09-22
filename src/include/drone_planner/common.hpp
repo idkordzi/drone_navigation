@@ -73,13 +73,13 @@ inline void wrapPolar(PolarPoint& polar) {
 }
 
 inline Eigen::Vector2i convertAngleToHistogramIndex(float elev, float azim, int alpha) {
-  return Eigen::Vector2i(static_cast<int>(std::floor((azim + 180.0f) / alpha)),
-                         static_cast<int>(std::floor((elev +  90.0f) / alpha)));
+  return Eigen::Vector2i(std::min(static_cast<int>(std::floor((azim + 180.0f) / alpha)), 360/alpha-1),
+                         std::min(static_cast<int>(std::floor((elev +  90.0f) / alpha)), 180/alpha-1));
 }
 
 inline Eigen::Vector2i convertPolarToHistogramIndex(const PolarPoint& polar, int alpha) {
-  return Eigen::Vector2i(static_cast<int>(std::floor((polar.azim + 180.0f) / alpha)),
-                         static_cast<int>(std::floor((polar.elev +  90.0f) / alpha)));
+  return Eigen::Vector2i(std::min(static_cast<int>(std::floor((polar.azim + 180.0f) / alpha)), 360/alpha-1),
+                         std::min(static_cast<int>(std::floor((polar.elev +  90.0f) / alpha)), 180/alpha-1));
 }
     
 inline PolarPoint convertHistogramIndexToPolar(int y, int x, int alpha, float radius) {

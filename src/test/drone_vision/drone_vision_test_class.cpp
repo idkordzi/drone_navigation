@@ -117,12 +117,58 @@ public:
       target_loc = this->getTarget();
 
       std::chrono::duration<double> time_passed = std::chrono::system_clock::now() - time_start;
-      avg_time = time_passed.count();
+      avg_time += time_passed.count();
     }
     avg_time = avg_time / n_loops;
     std::cout << "Average inference time: " << avg_time << " [s]\n";
 
     std::cout << "[INFO] Test STOP\n\n";
+  }
+
+};
+
+
+class YOLOTimingTestClass : public YOLOWrapper {
+
+public:
+  
+  YOLOTimingTestClass() = default;
+  ~YOLOTimingTestClass() = default;
+
+  void runTest() {
+
+    std::cout << "[INFO] Running: 'drone_yolo_wrapper_timing': model inference\n";
+    this->runTiming(10);
+    this->runTiming(100);
+    this->runTiming(1000);
+    std::cout << "[INFO] Test STOP\n\n";
+  }
+
+  void runTiming(int loops) {
+
+    std::string image_path = "src/yolo/dataset/000000017627.jpg";
+    cv::Mat image = cv::imread(image_path);
+    Eigen::Vector2i target_loc = Eigen::Vector2i::Zero();
+
+    std::cout << "Running warmup inference\n";
+    this->setInput(image);
+    this->run();
+
+    int n_loops = loops;
+    double avg_time = 0.0;
+    std::cout << "Running " << n_loops << " loops\n";
+    for (int l = 0; l < n_loops; l++) {
+      std::chrono::system_clock::time_point time_start = std::chrono::system_clock::now();
+
+      this->setInput(image);
+      this->run();
+      target_loc = this->getTarget();
+
+      std::chrono::duration<double> time_passed = std::chrono::system_clock::now() - time_start;
+      avg_time += time_passed.count();
+    }
+    avg_time = avg_time / n_loops;
+    std::cout << "Average inference time: " << avg_time << " [s]\n";
   }
 
 };
@@ -135,6 +181,9 @@ int main() {
   DRONE_NAVIGATION::YOLOWrapperTestClass yolo_wrapper_test_class = DRONE_NAVIGATION::YOLOWrapperTestClass();
   yolo_wrapper_test_class.runTest();
   yolo_wrapper_test_class.runTiming();
+
+  DRONE_NAVIGATION::YOLOTimingTestClass yolo_timing_test_class = DRONE_NAVIGATION::YOLOTimingTestClass();
+  yolo_timing_test_class.runTest();
 
   return 0;
 }

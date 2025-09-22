@@ -18,6 +18,8 @@ void LocalPlanner::initialize() {
   this->translation_flatten_[10] = 1.0f; // [3,3]
   this->last_processing_time_ = std::chrono::system_clock::now();
 
+  this->drone_ready_ = false;
+
   this->histogram_ = PolarHistogram(this->config_.alpha);
   this->hist_image_ = cv::Mat(this->histogram_.getElevRes(), this->histogram_.getAzimRes(), CV_8UC3, cv::Scalar(0,0,0));
   this->cost_image_ = cv::Mat(this->histogram_.getElevRes(), this->histogram_.getAzimRes(), CV_8UC3, cv::Scalar(0,0,0));
@@ -41,9 +43,9 @@ void LocalPlanner::setState(Eigen::Vector3f position, Eigen::Vector3f orientatio
   this->orientation_  = orientation;
   this->lin_velocity_ = velocity;
 
-  Eigen::Quaternionf rotation = Eigen::AngleAxisf(-this->orientation_.z(), Eigen::Vector3f::UnitZ()) *
-                                Eigen::AngleAxisf(-this->orientation_.y(), Eigen::Vector3f::UnitY()) *
-                                Eigen::AngleAxisf(-this->orientation_.x(), Eigen::Vector3f::UnitX());
+  Eigen::Quaternionf rotation = Eigen::AngleAxisf(this->orientation_.z(), Eigen::Vector3f::UnitZ()) *
+                                Eigen::AngleAxisf(this->orientation_.y(), Eigen::Vector3f::UnitY()) *
+                                Eigen::AngleAxisf(this->orientation_.x(), Eigen::Vector3f::UnitX());
 
   this->rotation_matrix_ = rotation.normalized().toRotationMatrix();
   
@@ -87,27 +89,32 @@ void LocalPlanner::setGoal(Eigen::Vector3f goal) {
 }
 
 void LocalPlanner::setPointCloud(const PointCloud<PointXYZ>& cloud) {
-  this->cloud_cache_ = cloud;
+  this->cloud_cache_.clear();
+  for (auto &point : cloud) {
+    this->cloud_cache_.push_back(this->transformPoint(point));
+  }
   this->cloud_updated_ = true;
 }
 
 void LocalPlanner::run() {
 
-  if (!this->drone_ready_) {
+  if (this->drone_ready_) {
+    // Drone away from final goal
+    if ((this->goal_pos_-this->position_).norm() > this->config_.drone_pos_margin) {
+      if (this->goal_updated_ || this->cloud_updated_) {
+        this->processPointCloud();
+      }
+      this->planNext();
+    }
+    // Drone within acceptable margin
+    else {
+      this->next_ = this->goal_pos_;
+    }
+  }
+  else {
+    this->next_ = Eigen::Vector3f(0.0f, 0.0f, this->config_.init_altitude);
     if (this->position_.z() > this->config_.init_altitude-0.1f)
       this->drone_ready_ = true;
-  }
-
-  // Drone away from final goal
-  if ((this->goal_pos_-this->position_).norm() > this->config_.drone_pos_margin) {
-    if (this->goal_updated_ || this->cloud_updated_) {
-      this->processPointCloud();
-    }
-    this->planNext();
-  }
-  // Drone within acceptable margin
-  else {
-    this->next_ = this->goal_pos_;
   }
 }
 
@@ -116,6 +123,9 @@ Eigen::Vector3f LocalPlanner::getNext() const {
 };
 
 PointXYZ LocalPlanner::transformPoint(PointXYZ point) const {
+  // Eigen::Vector3f rotated = this->rotation_matrix_ * Eigen::Vector3f(point.x, point.y, point.z) + this->position_;
+  // return PointXYZ(rotated.x(), rotated.y(), rotated.z());
+
   float x = point.x * this->translation_flatten_[0] +
             point.y * this->translation_flatten_[1] +
             point.z * this->translation_flatten_[2] +
@@ -128,7 +138,7 @@ PointXYZ LocalPlanner::transformPoint(PointXYZ point) const {
             point.y * this->translation_flatten_[9] +
             point.z * this->translation_flatten_[10] +
             this->translation_flatten_[11];
-  return PointXYZ(x,y,z);
+  return PointXYZ(x, y, z);
 }
 
 void LocalPlanner::processPointCloud() {
@@ -187,7 +197,6 @@ void LocalPlanner::processPointCloud() {
     for (int azim = 0; azim < h_azim; azim++) {
       if (this->histogram_.getDistance(elev, azim) && this->histogram_.getAge(elev, azim) < this->config_.point_max_age) {
         PolarPoint polar = convertHistogramIndexToPolar(elev, azim, h_alpha, this->histogram_.getDistance(elev, azim));
-
         PolarPoint tmp_polar, new_polar;
         for (float elev_step = -h_alpha/2; elev_step < h_alpha; elev_step += h_alpha) {
           for (float azim_step = -h_alpha/2; azim_step < h_alpha; azim_step += h_alpha) {
@@ -228,7 +237,7 @@ void LocalPlanner::processPointCloud() {
 
   this->histogram_ = new_histogram;
   this->generateHistImage(this->histogram_, this->hist_image_);
-
+  
   this->last_processing_time_ = std::chrono::system_clock::now();
   this->cloud_updated_ = false;
 }
@@ -354,10 +363,7 @@ void LocalPlanner::planNext() {
   float next_pos_dist = (this->position_ - this->goal_pos_).norm();
   float step_size = next_pos_dist > this->config_.planning_step ? this->config_.planning_step : next_pos_dist;
 
-  if (!this->drone_ready_)
-    this->next_ = Eigen::Vector3f(0.0f, 0.0f, this->config_.init_altitude);
-  else
-    this->next_ = convertPolarToCartesian(PolarPoint(best_move.elevation, best_move.azimuth, step_size), this->position_);
+  this->next_ = convertPolarToCartesian(PolarPoint(best_move.elevation, best_move.azimuth, step_size), this->position_);
 
   this->cost_image_ = cost_image;
 }

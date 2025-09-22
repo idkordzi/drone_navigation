@@ -43,8 +43,8 @@ __global__ void cudaKernelProcessIncomingPointCloud(
     float p_azim = atan2f(y, x) * rad2deg;
     float p_radi = sqrtf(x*x + y*y + z*z);
 
-    unsigned h_azim = (unsigned)floorf((p_azim + 180.0f) / alpha);
-    unsigned h_elev = (unsigned)floorf((p_elev + 90.0f) / alpha);
+    unsigned h_azim = min((unsigned)floorf((p_azim + 180.0f) / alpha), (unsigned)360/alpha-1);
+    unsigned h_elev = min((unsigned)floorf((p_elev + 90.0f) / alpha), (unsigned)180/alpha-1);
     unsigned hi = h_elev*histogram_width + h_azim;
 
     atomicAdd(&distance_histogram[hi], p_radi);

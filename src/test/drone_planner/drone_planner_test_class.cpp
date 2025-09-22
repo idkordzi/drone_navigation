@@ -74,25 +74,25 @@ public:
     // ******************************************************************************************************************************** //
     std::cout << "[INFO] Test: 'add new goal'\n";
 
-    goal = Eigen::Vector3f(1.0f, 1.0f, 1.0f);
+    goal = Eigen::Vector3f(5.0f, 0.0f, 1.0f);
     this->setGoal(goal);
 
     if (this->goal_updated_) {
-      if (eqmarg(this->goal_.x(), 1.0f, 0.0f) && 
-          eqmarg(this->goal_.y(), 1.0f, 0.0f) && 
+      if (eqmarg(this->goal_.x(), 5.0f, 0.0f) && 
+          eqmarg(this->goal_.y(), 0.0f, 0.0f) && 
           eqmarg(this->goal_.z(), 1.0f, 0.0f))
         std::cout << "[SUCCESS] New goal updated\n";
       else
         std::cout << "[ERROR] Mismatch on new goal: (" << this->goal_.x() << ", " << this->goal_.y() << ", " << this->goal_.z() 
-                  << ") =/= (1.0, 1.0, 1.0)\n";
+                  << ") =/= (5.0, 0.0, 1.0)\n";
       
-      if (eqmarg(this->goal_pos_.x(), 0.387, 0.001f) &&
-          eqmarg(this->goal_pos_.y(), 0.387, 0.001f) &&
-          eqmarg(this->goal_pos_.z(), 1.5f, 0.001f))
+      if (eqmarg(this->goal_pos_.x(), 1.127f, 0.001f) &&
+          eqmarg(this->goal_pos_.y(),   0.0f, 0.001f) &&
+          eqmarg(this->goal_pos_.z(),   2.0f, 0.001f))
         std::cout << "[SUCCESS] New goal position updated\n";
       else
         std::cout << "[ERROR] Mismatch on new goal position: (" << this->goal_pos_.x() << ", " << this->goal_pos_.y() << ", " 
-                  << this->goal_pos_.z() << ") =/= (0.387.., 0.387.., 1.5)\n";
+                  << this->goal_pos_.z() << ") =/= (1.127.., 0.0, 2.0)\n";
     }
     else
       std::cout << "[ERROR] Could not add new goal\n";
@@ -100,7 +100,7 @@ public:
     // ******************************************************************************************************************************** //
     std::cout << "[INFO] Test: 'add new goal within ignorance margin'\n";
 
-    goal = Eigen::Vector3f(1.01, 1.01, 1.01);
+    goal = Eigen::Vector3f(5.01, 0.01, 1.01);
     this->setGoal(goal);
 
     if (this->goal_updated_) {
@@ -112,25 +112,25 @@ public:
     // ******************************************************************************************************************************** //
     std::cout << "[INFO] Test: 'add new goal with preserving previuos goal\n";
 
-    goal = Eigen::Vector3f(2.0, 2.0, 2.0);
+    goal = Eigen::Vector3f(6.0, 1.0, 2.0);
     this->setGoal(goal);
 
     if (this->goal_updated_) {
       Eigen::Vector3f prev_goal = this->prev_goal_array_[1];
-      if (eqmarg(this->goal_.x(), 2.0f, 0.0f) && 
-          eqmarg(this->goal_.y(), 2.0f, 0.0f) && 
+      if (eqmarg(this->goal_.x(), 6.0f, 0.0f) && 
+          eqmarg(this->goal_.y(), 1.0f, 0.0f) && 
           eqmarg(this->goal_.z(), 2.0f, 0.0f))
         std::cout << "[SUCCESS] New goal updated\n";
       else
         std::cout << "[ERROR] Mismatch on new goal: (" << this->goal_.x() << ", " << this->goal_.y() << ", " << this->goal_.z() 
-                  << ") =/= (2.0, 2.0, 2.0)\n";
-      if (eqmarg(prev_goal.x(), 1.0f, 0.0f) && 
-          eqmarg(prev_goal.y(), 1.0f, 0.0f) && 
+                  << ") =/= (6.0, 1.0, 2.0)\n";
+      if (eqmarg(prev_goal.x(), 5.0f, 0.0f) && 
+          eqmarg(prev_goal.y(), 0.0f, 0.0f) && 
           eqmarg(prev_goal.z(), 1.0f, 0.0f))
         std::cout << "[SUCCESS] Previous goal preserved\n";
       else
         std::cout << "[ERROR] Mismatch on previous goal: ("<< prev_goal.x() << ", " << prev_goal.y() << ", " << prev_goal.z() 
-                  << ") =/= (1.0, 1.0, 1.0)\n";
+                  << ") =/= (5.0, 0.0, 1.0)\n";
     }
     else
       std::cout << "[ERROR] Could not add new goal\n";
@@ -225,12 +225,12 @@ public:
     std::cout << "[INFO] Test: 'add new point cloud\n";
 
     position    = Eigen::Vector3f(1.0f, 1.0f, 0.0f);
-    orientation = Eigen::Vector3f::Zero();
+    orientation = Eigen::Vector3f(0.0f, 0.0f, 1.57079f);
     velocity    = Eigen::Vector3f::Zero();
 
     this->setState(position, orientation, velocity);
 
-    point_xyz = PointXYZ(1.0, 1.0, 1.0);
+    point_xyz = PointXYZ(1.0, -1.0, 1.0);
     point_cloud.clear();
     point_cloud.push_back(point_xyz);
 
@@ -239,11 +239,11 @@ public:
     if (this->cloud_updated_) {
       if (this->cloud_cache_.size() != 1)
         std::cout << "[ERROR] Incorrect point cloud size: '" << this->cloud_cache_.size() << "' =/= 1\n";
-      else if(!eqmarg(this->cloud_cache_[0].x, 1.0f, 0.0f) || 
-              !eqmarg(this->cloud_cache_[0].y, 1.0f, 0.0f) || 
-              !eqmarg(this->cloud_cache_[0].z, 1.0f, 0.0f))
+      else if(!eqmarg(this->cloud_cache_[0].x, 2.0f, 0.001f) || 
+              !eqmarg(this->cloud_cache_[0].y, 2.0f, 0.001f) || 
+              !eqmarg(this->cloud_cache_[0].z, 1.0f, 0.001f))
         std::cout << "[ERROR] Mismatch on 3D point in added point cloud: (" << this->cloud_cache_[0].x << ", " 
-                  << this->cloud_cache_[0].y << ", " << this->cloud_cache_[0].z << ") =/= (1.0, 1.0, 1.0)\n";
+                  << this->cloud_cache_[0].y << ", " << this->cloud_cache_[0].z << ") =/= (2.0, 2.0, 1.0)\n";
       else
         std::cout << "[SUCCESS] New point cloud updated\n";
     }
@@ -388,7 +388,7 @@ public:
     max_time = 0.0;
     min_time = 1e3;
     passed = 0.0;
-    n_loops = 1000;
+    n_loops = 100;
     std::cout << "Running " << n_loops << " loops\n";
     for (int l = 0; l < n_loops; l++) {
 
@@ -418,7 +418,7 @@ public:
     max_time = 0.0;
     min_time = 1e3;
     passed = 0.0;
-    n_loops = 1000;
+    n_loops = 100;
     std::cout << "Running " << n_loops << " loops\n";
     for (int l = 0; l < n_loops; l++) {
 
@@ -450,7 +450,7 @@ public:
     max_time = 0.0;
     min_time = 1e3;
     passed = 0.0;
-    n_loops = 1000;
+    n_loops = 100;
     std::cout << "Running " << n_loops << " loops\n";
     for (int l = 0; l < n_loops; l++) {
 
@@ -473,6 +473,100 @@ public:
   }
 };
 
+
+class CloudAccelTestClass : public LocalPlanner {
+
+public:
+  CloudAccelTestClass() = default;
+  ~CloudAccelTestClass() = default;
+
+  void runTest() {
+
+    std::cout << "[INFO] Running: 'drone_local_planner_timing': processing point cloud\n";
+    this->runTiming(10);
+    this->runTiming(100);
+    this->runTiming(1000);
+    std::cout << "[INFO] Test STOP\n\n";
+  }
+
+  void runTiming(int loops) {
+
+    Eigen::Vector3f position    = Eigen::Vector3f::Zero();
+    Eigen::Vector3f orientation = Eigen::Vector3f::Zero();
+    Eigen::Vector3f velocity    = Eigen::Vector3f::Zero();
+
+    Eigen::Vector3f goal = Eigen::Vector3f::Zero();
+
+    PointCloud<PointXYZ> point_cloud = PointCloud<PointXYZ>();
+
+    double avg_time = 0.0;
+    double max_time = 0.0;
+    double min_time = 1e3;
+    double passed = 0.0;
+    std::chrono::duration<double> time_passed;
+    int n_loops = 0;
+
+    // **************** //
+
+    position    = Eigen::Vector3f(0.0f, 0.0f, 1.0f);
+    orientation = Eigen::Vector3f::Zero();
+    velocity    = Eigen::Vector3f::Zero();
+
+    goal = Eigen::Vector3f(100.0f, 0.0f, 1.0f);
+
+    int c_width = 640;
+    int c_height = 360;
+
+    double step_w = 10.0 / (c_width / 2);
+    double step_h = 5.0 / (c_height / 2);
+    double step_d = 1.0 / (c_width / 2);
+
+    point_cloud.clear();
+    Eigen::Vector3f sp = Eigen::Vector3f(step_d, step_w, 0.0);
+    for (int i = 0; i < c_height; i++) {
+      Eigen::Vector3f np = Eigen::Vector3f(5.0, -10.0, -5.0);
+      for (int j = 0; j < c_width; j++) {
+        point_cloud.push_back(PointXYZ(np.x(), np.y(), np.z()));
+        np += sp;
+      }
+      np += Eigen::Vector3f(0.0, 0.0, step_h);
+    }
+
+    // **************** //
+
+    this->reset();
+
+    this->setState(position, orientation, velocity);
+    this->setGoal(goal);
+    this->setPointCloud(point_cloud);
+    this->processPointCloud();
+
+    avg_time = 0.0;
+    max_time = 0.0;
+    min_time = 1e3;
+    passed = 0.0;
+    n_loops = loops;
+    std::cout << "Running " << n_loops << " loops\n";
+    for (int l = 0; l < n_loops; l++) {
+
+      this->cloud_updated_ = true;
+
+      std::chrono::system_clock::time_point time_start = std::chrono::system_clock::now();
+
+      this->processPointCloud();
+
+      time_passed = std::chrono::system_clock::now() - time_start;
+      passed = time_passed.count();
+      avg_time += passed;
+      max_time = passed > max_time ? passed : max_time;
+      min_time = passed < min_time ? passed : min_time;
+    }
+    avg_time = avg_time / n_loops;
+    std::cout << "Processing time: average: " << avg_time << "; max: " << max_time << "; min: " << min_time << " [s]\n";
+  }
+
+};
+
 } // namespace DRONE_NAVIGATION
 
 
@@ -484,6 +578,9 @@ int main() {
   DRONE_NAVIGATION::LocalPlannerTestClass local_planner_test_class = DRONE_NAVIGATION::LocalPlannerTestClass();
   local_planner_test_class.runTest();
   local_planner_test_class.runTiming();
+
+  DRONE_NAVIGATION::CloudAccelTestClass cloud_accel_test_class = DRONE_NAVIGATION::CloudAccelTestClass();
+  cloud_accel_test_class.runTest();
 
   return 0;
 }
