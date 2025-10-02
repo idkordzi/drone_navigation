@@ -24,7 +24,13 @@ struct StateEstimatorConfig {
 
   const float c1_ = -0.000167604f / 0.008f;
   const float c2_ =  0.000167604f / 0.015f;
+
+  const float Kf = 0.00001f;
+  const float Km = 0.00001f;
 };
+
+// for hover velocity, ctrl is 1534.0 which gives 0.5425 PWM which gives ~454.615 RPM
+// for hover velocity Kf = g / hover^2 / 4
 
 class StateEstimator {
 

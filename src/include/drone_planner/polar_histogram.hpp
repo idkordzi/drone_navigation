@@ -85,6 +85,13 @@ public:
   int getAzimRes() const {return this->azim_dim_;}
   int getElevRes() const {return this->elev_dim_;}
 
+  void wrapIndex(int& y, int& x) const {
+    y = y % this->elev_dim_;
+    if (y < 0) y += this->elev_dim_;
+    x = x % this->azim_dim_;
+    if (x < 0) x += this->azim_dim_;
+  }
+
 private:
 
   int alpha_    = 0.0f;
@@ -94,12 +101,12 @@ private:
   Eigen::MatrixXf distance_ = {};
   Eigen::MatrixXf age_ = {};
 
-  inline void wrapIndex(int& y, int& x) const {
-    y = y % this->elev_dim_;
-    if (y < 0) y += this->elev_dim_;
-    x = x % this->azim_dim_;
-    if (x < 0) x += this->azim_dim_;
-  }
+  // inline void wrapIndex(int& y, int& x) const {
+  //   y = y % this->elev_dim_;
+  //   if (y < 0) y += this->elev_dim_;
+  //   x = x % this->azim_dim_;
+  //   if (x < 0) x += this->azim_dim_;
+  // }
 
 };
 

@@ -43,8 +43,10 @@ void LocalPlanner::setState(Eigen::Vector3f position, Eigen::Vector3f orientatio
   this->orientation_  = orientation;
   this->lin_velocity_ = velocity;
 
+  float cr = 20.0f / 180.0f * PI_F;
+
   Eigen::Quaternionf rotation = Eigen::AngleAxisf(this->orientation_.z(), Eigen::Vector3f::UnitZ()) *
-                                Eigen::AngleAxisf(this->orientation_.y(), Eigen::Vector3f::UnitY()) *
+                                Eigen::AngleAxisf(this->orientation_.y() - cr, Eigen::Vector3f::UnitY()) *
                                 Eigen::AngleAxisf(this->orientation_.x(), Eigen::Vector3f::UnitX());
 
   this->rotation_matrix_ = rotation.normalized().toRotationMatrix();
@@ -62,16 +64,19 @@ void LocalPlanner::setState(Eigen::Vector3f position, Eigen::Vector3f orientatio
 }
 
 void LocalPlanner::setGoal(Eigen::Vector3f goal) {
-  if (std::isnan(goal.x()) || std::isnan(goal.y()) || std::isnan(goal.z()))
-    return;
+  if (std::isnan(goal.x()) || std::isnan(goal.y()) || std::isnan(goal.z())) {
+    // return;
+    goal = this->goal_pred_;
+  }
 
   Eigen::Vector3f new_goal = this->rotation_matrix_ * goal + this->position_;
   
   if ((this->goal_ - new_goal).norm() > this->config_.goal_dev_margin) {
 
-    this->prev_goal_array_.push_back(this->goal_);
+    this->prev_goal_array_.push_back(new_goal);
     if (this->prev_goal_array_.size() > this->config_.prev_goal_num)
       this->prev_goal_array_ = std::vector<Eigen::Vector3f>(this->prev_goal_array_.begin()+1, this->prev_goal_array_.end());
+    this->predictNewGoal();
     
     this->goal_ = new_goal;
 
@@ -139,6 +144,37 @@ PointXYZ LocalPlanner::transformPoint(PointXYZ point) const {
             point.z * this->translation_flatten_[10] +
             this->translation_flatten_[11];
   return PointXYZ(x, y, z);
+}
+
+void LocalPlanner::predictNewGoal() {
+
+  if (this->prev_goal_array_.size() < this->config_.prev_goal_num) return;
+
+  static std::chrono::system_clock::time_point last_pred;
+
+  double dt = (std::chrono::system_clock::now() - last_pred).count();
+
+  std::vector<Eigen::Vector3f> velArr;
+  Eigen::Vector3f velMean = Eigen::Vector3f::Zero();
+  for (unsigned i = 0; i < this->config_.prev_goal_num-1; i++) {
+    Eigen::Vector3f vel = this->prev_goal_array_[i+1] - this->prev_goal_array_[i];
+    velArr.push_back(vel);
+    velMean += vel;
+  }
+  velMean /= velArr.size();
+
+  std::vector<Eigen::Vector3f> accArr;
+  Eigen::Vector3f accMean = Eigen::Vector3f::Zero();
+  for (unsigned i = 0; i < this->config_.prev_goal_num-2; i++) {
+    Eigen::Vector3f acc = velArr[i+1] - velArr[i];
+    accArr.push_back(acc);
+    accMean += acc;
+  }
+  accMean /= accArr.size();
+
+  this->goal_pred_ = this->prev_goal_array_[this->config_.prev_goal_num-1] + velMean * dt + 0.5 * accMean * dt * dt;
+
+  last_pred = std::chrono::system_clock::now();
 }
 
 void LocalPlanner::processPointCloud() {
@@ -321,6 +357,20 @@ void LocalPlanner::getCostMatrix(
   }
 
   cost_matrix += distance_matrix;
+
+  // calculate mean
+  for (int elev = 0; elev < histogram.getElevRes(); elev++) {
+    for (int azim = 0; azim < histogram.getAzimRes(); azim ++) {
+      float mean = 0.0f;
+      for (int i = -2; i < 3; i++) {
+        int y = elev, x = azim+i;
+        histogram.wrapIndex(y, x);
+        mean += cost_matrix(y, x);
+      }
+      mean /= 5;
+      cost_matrix(elev, azim) = mean;
+    }
+  }
 
   this->generateCostImage(cost_matrix, distance_matrix, cost_image);
 }

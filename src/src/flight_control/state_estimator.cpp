@@ -45,10 +45,10 @@ void StateEstimator::updateModelFunction(Eigen::VectorXf input) {
   this->f_(10) =  this->config_.b2_ * this->xe_(8) * this->xe_(6) + this->config_.c2_ * this->xe_(6) * (-r_fl + r_fr + r_rl - r_rr);
   this->f_(11) =  this->config_.b3_ * this->xe_(6) * this->xe_(7);
 
-  this->f_(6)  += this->config_.a1_ * ( r_fl + r_fr + r_rl + r_rr);
-  this->f_(9)  += this->config_.a2_ * ( r_fl - r_fr + r_rl - r_rr);
-  this->f_(10) += this->config_.a3_ * (-r_fl - r_fr + r_rl + r_rr);
-  this->f_(11) += this->config_.a4_ * (-r_fl + r_fr + r_rl - r_rr);
+  this->f_(6)  += this->config_.a1_ * this->config_.Kf * ( r_fl + r_fr + r_rl + r_rr);
+  this->f_(9)  += this->config_.a2_ * this->config_.Kf * ( r_fl - r_fr + r_rl - r_rr);
+  this->f_(10) += this->config_.a3_ * this->config_.Kf * (-r_fl - r_fr + r_rl + r_rr);
+  this->f_(11) += this->config_.a4_ * this->config_.Km * (-r_fl + r_fr + r_rl - r_rr);
 }
 
 void StateEstimator::updateModelJacobian(Eigen::VectorXf input, float t) {

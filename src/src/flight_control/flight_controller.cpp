@@ -67,8 +67,8 @@ std::vector<float> FlightController::calculateControl(Eigen::Vector3f position, 
 
   Eigen::Vector4f input_error = Eigen::Vector4f(
     pos_diff.z(),
-    ang_diff.x() - velocity_local.y(),
-    ang_diff.y() + velocity_local.x(),
+    ang_diff.x() - 0.7*velocity_local.y(),
+    ang_diff.y() + 0.7*velocity_local.x(),
     ang_diff.z()
   );
 

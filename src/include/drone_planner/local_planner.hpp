@@ -21,7 +21,7 @@ struct LocalPlannerConfig {
   bool en_cuda = true;
   bool skip_planning = false;
 
-  float init_altitude = 2.0f; // [m]
+  float init_altitude = 3.0f; // [m]
 
   // camera params
   float sensor_min_range = 0.2f;  // [m]
@@ -31,7 +31,7 @@ struct LocalPlannerConfig {
   float camera_fov_v = 58.0f; // [deg]
 
   // polar histogram params
-  int alpha = 6; // [deg]
+  int alpha = 3; // [deg]
 
   // point cloud params
   float point_max_age = 5.0f; // [s]
@@ -39,7 +39,7 @@ struct LocalPlannerConfig {
   // goal settings
   float goal_dev_margin = 0.1f; // [m]
 
-  unsigned prev_goal_num = 3;
+  unsigned prev_goal_num = 10;
   unsigned extr_goal_num = 1;
 
   float goal_min_dist = 4.0f; // [m]
@@ -107,6 +107,8 @@ protected:
 
   void initialize();
 
+  void predictNewGoal();
+
   PointXYZ transformPoint(PointXYZ point) const;
   void processPointCloud();
 
@@ -138,9 +140,10 @@ protected:
   bool state_updated_ = false;
   bool cloud_updated_ = false;
 
-  Eigen::Vector3f goal_     = Eigen::Vector3f::Zero();
-  Eigen::Vector3f goal_pos_ = Eigen::Vector3f::Zero();
-  Eigen::Vector3f next_     = Eigen::Vector3f::Zero();
+  Eigen::Vector3f goal_      = Eigen::Vector3f::Zero();
+  Eigen::Vector3f goal_pred_ = Eigen::Vector3f::Zero();
+  Eigen::Vector3f goal_pos_  = Eigen::Vector3f::Zero();
+  Eigen::Vector3f next_      = Eigen::Vector3f::Zero();
   
   std::vector<Eigen::Vector3f> prev_goal_array_ = {};
   std::vector<Eigen::Vector3f> extr_goal_array_ = {};
