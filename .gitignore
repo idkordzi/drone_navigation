@@ -2,6 +2,7 @@ build/
 
 *.vscode/
 *.venv/
+*__pycache__/
 
 *.onnx
 *.pt

@@ -1,0 +1,7 @@
+click
+tqdm
+numpy
+onnx
+ultralytics
+opencv-python
+matplotlib
