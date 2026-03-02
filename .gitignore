@@ -3,6 +3,5 @@ build/
 *.vscode/
 *.venv/
 
-src/python/.venv
-src/python/*.onnx
-src/python/*.pt
+*.onnx
+*.pt
